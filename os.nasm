@@ -7,32 +7,30 @@ boot:
   xor ax, ax
   mov ss, ax
   mov sp, 0x7c00
+  call load
+  jmp kernel
 
-  .load_floppy:
-    mov ah, 0x02 ; read
-    mov al, 4 ; n sectors
-    mov ch, 0 ; cylinder
-    mov dh, 0 ; head
-    mov dl, 0 ; floppy
-    mov cl, 2 ; sector
-    mov bx, 0x07e0 ; destination
-    mov es, bx
-    xor bx, bx ; offset in es
-    int 0x13
+load:
+  mov ah, 0x02 ; read
+  mov al, 1 ; n sectors
+  mov ch, 0 ; cylinder
+  mov dh, 0 ; head
+  mov dl, 0 ; floppy
+  mov cl, 2 ; sector
+  mov bx, 0x07e0 ; destination
+  mov es, bx
+  xor bx, bx ; offset in es
+  int 0x13
+  ret
 
-  .run_kernel:
-    jmp kernel
-
-  .signature:
-    times 512 - ($ - $$) - 2 db 0
-    dw 0xAA55
-
+; boot signature
+times 510 - ($ - $$) db 0
+dw 0xAA55
 
 ; --- KERNEL ---
-hp dw 0x7e00 + (4 * 512)
 
 kernel:
-  mov si, meow
+  mov ax, meow
   call print
   call lang
   jmp poweroff
@@ -41,6 +39,7 @@ meow:
   db "meow ^^", 13, 10, 0
 
 print:
+  mov si, ax
   mov ah, 0x0e
   .loop:
     lodsb
@@ -97,12 +96,15 @@ parse:
   ret
 
 alloc:
-  mov bx, [hp]
-  add word [hp], ax
+  mov bx, [heap_end]
+  add word [heap_end], ax
   mov ax, bx
   ret
 
 code db 'b4 0e b0 6f cd 10 b0 6b cd 10 c3', 0
-align 16
 
-times 4 * 512 - ($ - $$) db 0
+align 16
+heap_end dw $$ + 2 * 512
+
+
+times 2 * 512 - ($ - $$) db 0
