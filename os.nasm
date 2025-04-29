@@ -1,6 +1,7 @@
 org 0x7c00
+; free memory: 0x500 - 0xA0000
 code_start equ 0x8000
-heap_start equ 0x9000
+heap_start equ 0x1000
 
 init:
   xor ax, ax
