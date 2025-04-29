@@ -1,8 +1,8 @@
 ID=os140534
 RUN=docker run --rm -it -v ./:/app -w /app $(ID)
 
-os.bin: os_i86.nasm os.txt
-	$(RUN) nasm -f bin -o os.bin os_i86.nasm
+os.bin: os.nasm os.txt
+	$(RUN) nasm -f bin -o os.bin os.nasm
 	dd if=/dev/zero of=os.bin bs=512 seek=1 count=1
 	dd if=os.txt of=os.bin bs=512 seek=1 count=1 conv=notrunc
 

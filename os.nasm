@@ -1,9 +1,6 @@
-
-; --- BOOTLOADER ---
-
 org 0x7c00
-code equ 0x8000
-heap equ 0x9000
+code_start equ 0x8000
+heap_start equ 0x9000
 
 init:
   xor ax, ax
@@ -13,7 +10,7 @@ init:
 start:
   call load
   call run
-  jmp poweroff
+  jmp $
 
 load:
   mov ah, 0x02 ; read
@@ -22,35 +19,18 @@ load:
   mov dh, 0 ; head
   mov dl, 0 ; floppy
   mov cl, 2 ; sector
-  mov bx, code / 16 ; destination
+  mov bx, code_start / 16 ; destination
   mov es, bx
   xor bx, bx ; offset in es
   int 0x13
   ret
-
-print:
-  mov si, ax
-  mov ah, 0x0e
-  .loop:
-    lodsb
-    or al, al
-    jz .end
-    int 0x10
-    jmp .loop
-  .end:
-    ret
-
-poweroff:
-  mov ah, 0x19
-  int 0x15
-  jmp $
 
 run:
   mov ax, 1024
   call alloc
   push ax
   mov di, ax
-  mov si, code
+  mov si, code_start
   call parse
   pop ax
   call ax
@@ -93,7 +73,7 @@ alloc:
   mov ax, bx
   ret
 
-heap_end dw heap
+heap_end dw heap_start
 
 signature:
   times 510 - ($ - $$) db 0
