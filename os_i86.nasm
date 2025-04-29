@@ -2,17 +2,17 @@
 ; --- BOOTLOADER ---
 
 org 0x7c00
+code equ 0x8000
+heap equ 0x9000
 
 init:
   xor ax, ax
   mov ss, ax
-  mov sp, 0x7c00
+  mov sp, $$
 
 start:
   call load
-  mov ax, meow
-  call print
-  call lang
+  call run
   jmp poweroff
 
 load:
@@ -22,7 +22,7 @@ load:
   mov dh, 0 ; head
   mov dl, 0 ; floppy
   mov cl, 2 ; sector
-  mov bx, 0x07e0 ; destination
+  mov bx, code / 16 ; destination
   mov es, bx
   xor bx, bx ; offset in es
   int 0x13
@@ -45,10 +45,7 @@ poweroff:
   int 0x15
   jmp $
 
-meow:
-  db "meow ^^", 13, 10, 0
-
-lang:
+run:
   mov ax, 1024
   call alloc
   push ax
@@ -96,10 +93,8 @@ alloc:
   mov ax, bx
   ret
 
-heap_end dw $$ + 8 * 512
+heap_end dw heap
 
 signature:
   times 510 - ($ - $$) db 0
   dw 0xAA55
-
-code:
