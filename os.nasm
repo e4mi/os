@@ -3,16 +3,21 @@
 
 org 0x7c00
 
-boot:
+init:
   xor ax, ax
   mov ss, ax
   mov sp, 0x7c00
+
+start:
   call load
-  jmp kernel
+  mov ax, meow
+  call print
+  call lang
+  jmp poweroff
 
 load:
   mov ah, 0x02 ; read
-  mov al, 1 ; n sectors
+  mov al, 5 ; n sectors
   mov ch, 0 ; cylinder
   mov dh, 0 ; head
   mov dl, 0 ; floppy
@@ -22,21 +27,6 @@ load:
   xor bx, bx ; offset in es
   int 0x13
   ret
-
-; boot signature
-times 510 - ($ - $$) db 0
-dw 0xAA55
-
-; --- KERNEL ---
-
-kernel:
-  mov ax, meow
-  call print
-  call lang
-  jmp poweroff
-
-meow:
-  db "meow ^^", 13, 10, 0
 
 print:
   mov si, ax
@@ -54,6 +44,9 @@ poweroff:
   mov ah, 0x19
   int 0x15
   jmp $
+
+meow:
+  db "meow ^^", 13, 10, 0
 
 lang:
   mov ax, 1024
@@ -74,6 +67,8 @@ parse:
   or al, al
   jz .done
   cmp al, ' '
+  je .next
+  cmp al, 10
   je .next
   cmp al, '9'
   jbe .digit
@@ -101,10 +96,11 @@ alloc:
   mov ax, bx
   ret
 
-code db 'b4 0e b0 6f cd 10 b0 6b cd 10 c3', 0
+signature:
+  times 510 - ($ - $$) db 0
+  dw 0xAA55
 
-align 16
-heap_end dw $$ + 2 * 512
+heap_end dw $$ + 8 * 512
 
-
-times 2 * 512 - ($ - $$) db 0
+times 4 * 512 - ($ - $$) db 0
+code:
