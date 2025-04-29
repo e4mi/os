@@ -8,7 +8,7 @@ make         # compiles code in docker
 make run     # runs code in qemu
 make debug   # runs code in blinkenlights debugger
 
-LANGUAGE:
+LANGUAGE (todo):
 (asm ... c3) ; machine code
 (...)        ; create a function
 !            ; calls function

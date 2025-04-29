@@ -1,10 +1,14 @@
 ID=os140534
 RUN=docker run --rm -it -v ./:/app -w /app $(ID)
 
+all: os.bin
+
+clean:
+	$(RUN) rm -f os.bin
+
 os.bin: os.nasm os.txt
 	$(RUN) nasm -f bin -o os.bin os.nasm
-	dd if=/dev/zero of=os.bin bs=512 seek=1 count=1
-	dd if=os.txt of=os.bin bs=512 seek=1 count=1 conv=notrunc
+	$(RUN) dd if=os.txt of=os.bin bs=512 seek=1 count=1 conv=sync
 
 docker: Dockerfile
 	docker build -q -t $(ID) -f Dockerfile .
@@ -18,4 +22,4 @@ run: os.bin
 debug: os.bin
 	$(RUN) sh -c "blinkenlights -rt os.bin"
 
-.PHONY: docker sh qemu debug
+.PHONY: all clean docker sh run debug
