@@ -45,8 +45,6 @@ parse:
     jz .done
     cmp al, ' '
     je .next
-    cmp al, 10
-    je .next
     cmp al, '9'
     jbe .digit
     sub al, 'a' - 10
