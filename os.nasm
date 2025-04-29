@@ -43,12 +43,21 @@ parse:
     lodsb
     or al, al
     jz .done
+    cmp al, ';'
+    je .skip_comment
     cmp al, ' '
-    je .next
+    jbe .next
     cmp al, '9'
     jbe .digit
     sub al, 'a' - 10
     jmp .hex
+  .skip_comment:
+    lodsb
+    or al, al
+    jz .done
+    cmp al, 10
+    jne .skip_comment
+    jmp .next
   .digit:
     sub al, '0'
   .hex:
