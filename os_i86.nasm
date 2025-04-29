@@ -17,7 +17,7 @@ start:
 
 load:
   mov ah, 0x02 ; read
-  mov al, 5 ; n sectors
+  mov al, 1 ; n sectors
   mov ch, 0 ; cylinder
   mov dh, 0 ; head
   mov dl, 0 ; floppy
@@ -62,33 +62,33 @@ lang:
 parse:
   xor bx, bx
   xor cx, cx
-.next:
-  lodsb
-  or al, al
-  jz .done
-  cmp al, ' '
-  je .next
-  cmp al, 10
-  je .next
-  cmp al, '9'
-  jbe .digit
-  sub al, 'a' - 10
-  jmp .hex
-.digit:
-  sub al, '0'
-.hex:
-  shl bx, 4
-  or bl, al
-  inc cx
-  cmp cx, 2
-  jne .next
-  mov [di], bl
-  inc di
-  xor bx, bx
-  xor cx, cx
-  jmp .next
-.done:
-  ret
+  .next:
+    lodsb
+    or al, al
+    jz .done
+    cmp al, ' '
+    je .next
+    cmp al, 10
+    je .next
+    cmp al, '9'
+    jbe .digit
+    sub al, 'a' - 10
+    jmp .hex
+  .digit:
+    sub al, '0'
+  .hex:
+    shl bx, 4
+    or bl, al
+    inc cx
+    cmp cx, 2
+    jne .next
+    mov [di], bl
+    inc di
+    xor bx, bx
+    xor cx, cx
+    jmp .next
+  .done:
+    ret
 
 alloc:
   mov bx, [heap_end]
@@ -96,11 +96,10 @@ alloc:
   mov ax, bx
   ret
 
+heap_end dw $$ + 8 * 512
+
 signature:
   times 510 - ($ - $$) db 0
   dw 0xAA55
 
-heap_end dw $$ + 8 * 512
-
-times 4 * 512 - ($ - $$) db 0
 code:

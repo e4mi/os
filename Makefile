@@ -1,13 +1,10 @@
 ID=os140534
 RUN=docker run --rm -it -v ./:/app -w /app $(ID)
 
-os.bin: docker os.nasm
-	$(RUN) nasm -f bin -o os.bin os.nasm
-
-floppy.img: os.bin meow.app
-	dd if=/dev/zero of=floppy.img bs=512 count=4
-	dd if=os.bin of=floppy.img bs=512 count=2 conv=notrunc
-	dd if=meow.app of=floppy.img bs=512 seek=2 conv=notrunc
+os.bin: os_i86.nasm os.txt
+	$(RUN) nasm -f bin -o os.bin os_i86.nasm
+	dd if=/dev/zero of=os.bin bs=512 seek=1 count=1
+	dd if=os.txt of=os.bin bs=512 seek=1 count=1 conv=notrunc
 
 docker: Dockerfile
 	docker build -q -t $(ID) -f Dockerfile .
@@ -15,10 +12,10 @@ docker: Dockerfile
 sh:
 	$(RUN) sh
 
-run: floppy.img
-	$(RUN) qemu-system-i386 -fda floppy.img -nographic -boot a
+run: os.bin
+	$(RUN) qemu-system-i386 -fda os.bin -nographic -boot a
 
-debug: floppy.img
-	$(RUN) sh -c "blinkenlights -rt floppy.img"
+debug: os.bin
+	$(RUN) sh -c "blinkenlights -rt os.bin"
 
 .PHONY: docker sh qemu debug
