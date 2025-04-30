@@ -1,20 +1,20 @@
-b4 0e ; ah = 0x0e
-b0 6d ; al = 'm'
-cd 10 ; int
-b0 65 ; al = 'e'
-cd 10 ; int
-b0 6f ; al = 'o'
-cd 10 ; int
-b0 77 ; al = 'w'
-cd 10 ; int
-b0 20 ; al = ' '
-cd 10 ; int 
-b0 5e ; al = '^'
-cd 10 ; int 
-b0 5e ; al = '^'
-cd 10 ; int 
-b0 0d ; al = '\r'
-cd 10 ; int
-b0 0a ; al = '\n'
-cd 10 ; int
-c3    ; ret
+#b4 #0e ; ah = 0x0e
+#b0 #6d ; al = 'm'
+#cd #10 ; int
+#b0 #65 ; al = 'e'
+#cd #10 ; int
+#b0 #6f ; al = 'o'
+#cd #10 ; int
+#b0 #77 ; al = 'w'
+#cd #10 ; int
+#b0 #20 ; al = ' '
+#cd #10 ; int 
+#b0 #5e ; al = '^'
+#cd #10 ; int 
+#b0 #5e ; al = '^'
+#cd #10 ; int 
+#b0 #0d ; al = '\r'
+#cd #10 ; int
+#b0 #0a ; al = '\n'
+#cd #10 ; int
+#c3     ; ret
