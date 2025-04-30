@@ -7,6 +7,7 @@ heap_start equ 0x1000
 vars dw 0
 compiled dw 0
 heap_end dw heap_start
+stack dw 0
 
 init:
   xor ax, ax
@@ -32,9 +33,13 @@ load:
   ret
 
 run:
-  mov ax, 128 * 2
+  mov ax, 128 * 2 ; bytes
   call alloc
   mov [vars], ax
+
+  mov ax, 1024 ; bytes
+  call alloc
+  mov [stack], ax
 
   mov ax, 1024
   call alloc
@@ -55,20 +60,24 @@ parse:
     or al, al
     jz .done
     cmp al, ';'
-    je .skip_comment
+    je .comment
     cmp al, ' '
     jbe .next
     cmp al, '#'
     je .hex
+    cmp al, '$'
+    jbe .set
+    cmp al, '!'
+    jbe .apply
     cmp al, 'z'
     jbe .symbol
     jmp .next
-  .skip_comment:
+  .comment:
     lodsb
     or al, al
     jz .done
     cmp al, 10
-    jne .skip_comment
+    jne .comment
     jmp .next
   .hex:
   .hex1:
@@ -96,19 +105,11 @@ parse:
     mov [di], bx
     inc di
     jmp .next
-
   .symbol:
-    mov bx, si
+  .set:
+  .apply:
   .done:
     ret
-
-quote:
-
-push:
-
-pop:
-
-force:
 
 alloc:
   mov bx, [heap_end]
