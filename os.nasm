@@ -100,8 +100,8 @@ parse: ; (si: code, di: dest)
     cmp al, 9
     jbe .store_digit
     sub al, 'a' - '0' - 10
-    cmp al, 15
-    jae .hex_done
+    cmp al, 0xf
+    ja .hex_done
   .store_digit:
     shl bx, 4
     or bx, ax
