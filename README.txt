@@ -16,3 +16,7 @@ LANGUAGE (todo):
 $emit        ; saves value to variable emit
 ^emit        ; get address of variable
 emit         ; calls function
+
+EXAMPLE:
+[b0 58 b4 0e cd 10 c3] compile $emit
+[m e o w] ^emit each

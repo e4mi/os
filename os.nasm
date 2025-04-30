@@ -1,7 +1,12 @@
 org 0x7c00
-; free memory: 0x500 - 0xA0000
+jmp init
+; free memory in 8086: 0x500 - 0xA0000
 code_start equ 0x8000
 heap_start equ 0x1000
+
+vars dw 0
+compiled dw 0
+heap_end dw heap_start
 
 init:
   xor ax, ax
@@ -27,14 +32,19 @@ load:
   ret
 
 run:
+  mov ax, 128 * 2
+  call alloc
+  mov [vars], ax
+
   mov ax, 1024
   call alloc
-  push ax
+  mov [compiled], ax
+  
   mov di, ax
   mov si, code_start
   call parse
-  pop ax
-  call ax
+
+  call [compiled]
   ret
 
 parse:
@@ -48,10 +58,11 @@ parse:
     je .skip_comment
     cmp al, ' '
     jbe .next
-    cmp al, '9'
-    jbe .digit
-    sub al, 'a' - 10
-    jmp .hex
+    cmp al, '#'
+    je .hex
+    cmp al, 'z'
+    jbe .symbol
+    jmp .next
   .skip_comment:
     lodsb
     or al, al
@@ -59,29 +70,51 @@ parse:
     cmp al, 10
     jne .skip_comment
     jmp .next
-  .digit:
-    sub al, '0'
   .hex:
+  .hex1:
+    lodsb
+    or al, al
+    jz .done
+    sub al, '0'
+    cmp al, 'a'
+    jb .hex1a
+    sub al, 'a' - '0'
+  .hex1a:
+    mov bx, ax
     shl bx, 4
-    or bl, al
-    inc cx
-    cmp cx, 2
-    jne .next
-    mov [di], bl
+  .hex2:
+    lodsb
+    or al, al
+    jz .done
+    sub al, '0'
+    cmp al, 'a'
+    jb .hex2a
+    sub al, 'a' - '0'
+  .hex2a:
+    or bx, ax
+  .hex_write:
+    mov [di], bx
     inc di
-    xor bx, bx
-    xor cx, cx
     jmp .next
+
+  .symbol:
+    mov bx, si
   .done:
     ret
+
+quote:
+
+push:
+
+pop:
+
+force:
 
 alloc:
   mov bx, [heap_end]
   add word [heap_end], ax
   mov ax, bx
   ret
-
-heap_end dw heap_start
 
 signature:
   times 510 - ($ - $$) db 0
