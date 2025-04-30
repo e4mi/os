@@ -2,24 +2,28 @@ org 0x7c00
 jmp init
 
 ; free memory in 8086: 0x500 - 0xA0000
-code_start equ 0x8000
-heap_start equ 0x1000
-
+align 16
 vars dw 0
+source dw 0
 compiled dw 0
-heap_end dw heap_start
+heap_end dw 0x1000
 stack dw 0
+stack_size equ 1024
 
 init:
-  ; set up stack
   xor ax, ax
   mov ss, ax
   mov sp, $$
 
+start:
   call init_data
+
+  mov ax, [source]
   call load_fda
   
-  CALL parse, di, [compiled], si, code_start
+  mov di, [compiled]
+  mov si, [source]
+  call parse
 
   call [compiled]
 
@@ -30,25 +34,33 @@ init_data:
   call alloc
   mov [vars], ax
 
-  mov ax, 1024
+  mov ax, stack_size
   call alloc
   mov [stack], ax
+  mov bp, ax
+  add bp, stack_size
 
   mov ax, 1024
   call alloc
   mov [compiled], ax
 
+  mov ax, 4 * 1024
+  call alloc
+  mov [source], ax
+
   ret
 
-load_fda:
+load_fda: ; (ax: destination)
+  mov ax, es
+  mov bx, 16
+  div bl ; destination segment
+  mov es, ax
   mov ah, 0x02 ; read
   mov al, 1 ; n sectors
   mov ch, 0 ; cylinder
   mov dh, 0 ; head
   mov dl, 0 ; fda
   mov cl, 2 ; sector
-  mov bx, code_start / 16 ; destination
-  mov es, bx
   xor bx, bx ; offset in es
   int 0x13
   ret
@@ -116,18 +128,14 @@ alloc: ; (ax: bytes)
   mov ax, bx
   ret
 
-second_push: ; (ax: value)
-  mov bx, [stack]
-  sub bx, 2
-  mov [bx], ax
-  mov [stack], bx
+stack_push: ; (ax: value)
+  sub bp, 2
+  mov [bp], ax
   ret
 
-second_pop: ; () => (ax: value)
-  mov bx, [stack]
-  mov ax, [bx]
-  add bx, 2
-  mov [stack], bx
+stack_pop: ; () => (ax: value)
+  mov ax, [bp]
+  add bp, 2
   ret
 
 signature:
