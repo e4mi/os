@@ -1,14 +1,6 @@
 org 0x7c00
 jmp init
 
-%macro CALL 2-*
-  %rep %0
-    mov %[%i], %[%i + 1]
-    %assign i i + 2
-  %endrep
-  call %1
-%endmacro
-
 ; free memory in 8086: 0x500 - 0xA0000
 code_start equ 0x8000
 heap_start equ 0x1000
@@ -27,9 +19,7 @@ init:
   call init_data
   call load_fda
   
-  mov di, [compiled]
-  mov si, code_start
-  call parse
+  CALL parse, di, [compiled], si, code_start
 
   call [compiled]
 
