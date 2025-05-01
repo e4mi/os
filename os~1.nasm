@@ -1,68 +1,19 @@
 org 0x7c00
 jmp init
 
-%macro put 1-*
-  %assign i 1
-  %rep %0
-    mov ax, %i
-    sub bp, 2
-    mov [bp], ax
-    %assign i i+1
-  %endrep
-%endmacro
-
-%macro do 1-*
-  %assign i 2
-  %rep %0 - 1
-    mov ax, %i
-    sub bp, 2
-    mov [bp], ax
-    %assign i i+1
-  %endrep
-  call %1
-%endmacro
-
-%macro take 0
-  mov ax, [bp]
-  add bp, 2
-%endmacro
-
-%macro data 2
-  mov ax, %2
-  call alloc
-  mov [%1], ax
-%endmacro
-
-%macro var 1
-  %1 dw 0
-%endmacro
-
-alloc: ; (size)
-  mov bx, [heap]
-  take
-  add word [heap], ax
-  put bx
-  ret
-
 ; free memory in 8086: 0x500 - 0xA0000
 ; align 16
+vars dw 0
+source dw 0
+compiled dw 0
+heap dw 0x1000
+stack dw 0
+stack_size equ 1024
+
 init:
-  stack_size equ 1024
-  heap dw 0x1000
-  var vars
-  do alloc, vars, 256
-  var source
-  do alloc, source, 4096
-  var compiled
-  do alloc, compiled, 1024
-  var stack
-  do alloc, stack, 1024
-  
   xor ax, ax
   mov ss, ax
   mov sp, $$
-  mov bp, [stack]
-  add bp, stack_size
 
 start:
   call init_data
@@ -78,17 +29,36 @@ start:
 
   jmp $
 
+init_data:
+  mov ax, 128 * 2
+  call alloc
+  mov [vars], ax
+
+  mov ax, stack_size
+  call alloc
+  mov [stack], ax
+  mov bp, ax
+  add bp, stack_size
+
+  mov ax, 1024
+  call alloc
+  mov [compiled], ax
+
+  mov ax, 4 * 1024
+  call alloc
+  mov [source], ax
+
+  ret
 
 init_functions:
-  put comment
-  put ';'
-  var
-  set
+  mov ax, [vars]
+  mov bx, ax
+  add bx, ';'
+  mov [bx], comment
 
 var: ; ( symbol -- address )
   mov bx, [vars]
-  call take
-  dpush [vars]
+  dpush
   add ax, bx
   dpush
   ret
@@ -178,6 +148,8 @@ parse: ; (si: code, di: dest)
   .done:
     ret
 
+
+
 alloc: ; (ax: bytes)
   mov bx, [heap]
   add word [heap], ax
@@ -188,8 +160,7 @@ dpush: ; (ax: value)
   sub bp, 2
   mov [bp], ax
   ret
-
-dpop: ; () => (ax: value)
+  dpush: ; () => (ax: value)
   mov ax, [bp]
   add bp, 2
   ret
