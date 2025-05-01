@@ -7,7 +7,7 @@ clean:
 	$(RUN) rm -f os.bin
 
 os.bin: os.nasm os.txt
-	$(RUN) nasm -f bin -o os.bin os.nasm
+	$(RUN) nasm -O0 --reproducible -f bin -o os.bin os.nasm
 	$(RUN) dd if=os.txt of=os.bin bs=512 seek=1 count=1 conv=sync
 
 docker: Dockerfile

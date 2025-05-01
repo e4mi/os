@@ -2,11 +2,11 @@ org 0x7c00
 jmp init
 
 ; free memory in 8086: 0x500 - 0xA0000
-align 16
+; align 16
 vars dw 0
 source dw 0
 compiled dw 0
-heap_end dw 0x1000
+heap dw 0x1000
 stack dw 0
 stack_size equ 1024
 
@@ -67,14 +67,15 @@ load_fda: ; (ax: destination)
 
 
 parse: ; (si: code, di: dest)
-  lodsb
+  .read_next:
+    lodsb
   .next:
     or al, al
     jz .done
     cmp al, ';'
     je .comment
     cmp al, ' '
-    jbe parse
+    jbe read_next
     cmp al, '#'
     je .hex
     cmp al, '$'
@@ -83,48 +84,52 @@ parse: ; (si: code, di: dest)
     jbe .apply
     cmp al, 'z'
     jbe .symbol
-    jmp parse
+    jmp read_next
   .comment:
     lodsb
     or al, al
     jz .done
     cmp al, 10
     jne .comment
-    jmp parse
+    jmp read_next
   .hex:
     xor bx, bx
     xor cx, cx
-  .hex_loop:
-    lodsb
-    or al, al
-    jz .done
-    sub al, '0'
-    cmp al, 9
-    jbe .store_digit
-    sub al, 'a' - '0' - 10
-    cmp al, 0xf
-    ja .hex_done
-  .store_digit:
-    shl bx, 4
-    or bx, ax
-    inc cx
-    jmp .hex_loop
-  .hex_done:
+    .hex_loop:
+      lodsb
+      or al, al
+      jz .done
+      sub al, '0'
+      cmp al, 9
+      jbe .store_digit
+      sub al, 'a' - '0' - 10
+      cmp al, 0xf
+      ja .hex_done
+    .store_digit:
+      shl bx, 4
+      or bx, ax
+      inc cx
+      jmp .hex_loop
+    .hex_done:
+      mov [di], bx
+      inc di
+      jmp .next
+  .set:
+    jmp read_next
+  .apply:
+    jmp read_next
+  .symbol:
+    mov bx, [vars]
+    add bx, al
     mov [di], bx
     inc di
-    jmp .next
-  .set:
-    jmp parse
-  .apply:
-    jmp parse
-  .symbol:
-    jmp parse
+    jmp read_next
   .done:
     ret
 
 alloc: ; (ax: bytes)
-  mov bx, [heap_end]
-  add word [heap_end], ax
+  mov bx, [heap]
+  add word [heap], ax
   mov ax, bx
   ret
 
