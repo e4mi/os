@@ -49,8 +49,10 @@ alloc: ; (size)
 init:
   stack_size equ 1024
   heap dw 0x1000
+  
   var vars
   do alloc, vars, 256
+
   var source
   do alloc, source, 4096
   var compiled
