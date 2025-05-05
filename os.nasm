@@ -1,79 +1,100 @@
 org 0x7c00
+%define ipush(x) push x
+%define ipop() pop ax
+
+jmp start
+
+%macro push 1
+  mov ax, %1
+  sub bp, 2
+  mov [bp], ax
+%endmacro
+
+%macro pop 0
+  mov ax, [bp]
+  add bp, 2
+%endmacro
+
+load_fda: ; ( addr sector -- addr )
+  pop
+  mov cl, al
+  pop
+  mov bx, ax
+  xor dh, dh
+  xor ch, ch
+  mov dl, 0
+  mov ah, 2
+  mov al, 1
+  int 13h
+  push bx
+  ret
+
+goto_addr: ; ( addr -- )
+  pop
+  jmp ax
+
+emit: ; ( char -- )
+  pop
+  mov ah, 0x0e
+  int 10h
+  cmp al, 10
+  jne .nonl
+  mov al, 13
+  int 10h
+  .nonl:
+  ret
+
+print_str: ; ( addr -- )
+  pop
+  mov si, ax
+.pls:
+  lodsb
+  or al, al
+  jz .plend
+  push ax
+  call emit
+  jmp .pls
+.plend:
+  ret
+
+print_num: ; ( num -- )
+  pop
+  mov cx, 0
+  mov bx, 10
+.pn1:
+  xor dx, dx
+  div bx         ; AX=quot, DX=rem
+  push dx
+  inc cx
+  or ax, ax
+  jnz .pn1
+.pn2:
+  pop             ; DX
+  add dl, '0'
+  push dx
+  call emit
+  loop .pn2
+  ret
 
 start:
-    cli
-    xor ax, ax
-    mov ds, ax
-    mov es, ax
+  xor ax, ax
+  mov ds, ax
+  mov es, ax
+  mov bp, 0x9000
 
-    ; load sector 2 to 0:800h
-    mov bx, 0x0800
-    mov ah, 2
-    mov al, 1
-    xor ch, ch
-    xor dh, dh
-    mov dl, 0
-    mov cl, 2
-    int 13h
+  push msg
+  call print_str
+  jmp $
 
-    mov si, 0x0800
-    mov di, 0x1000
+  push 0x0800
+  push 2
+  call load_fda
+  call goto_addr
 
-next:
-    lodsb
-    or al, al
-    jz run
-    cmp al, ';'
-    je skip_comment
-    cmp al, '#'
-    jne next
+  hlt
+  jmp $
 
-    lodsb
-    call hex
-    shl al, 4
-    mov ah, al
-
-    lodsb
-    call hex
-    or al, ah
-    stosb
-
-    jmp next
-
-skip_comment:
-    lodsb
-    cmp al, 10
-    jne skip_comment
-    jmp next
-
-
-run:
-    call 0x0000:0x1000
-    jmp $
-
-hex:
-    cmp al, '0'
-    jb bad
-    cmp al, '9'
-    jbe .num
-    cmp al, 'a'
-    jb bad
-    cmp al, 'f'
-    jbe .low
-    jmp bad
-
-.num:
-    sub al, '0'
-    ret
-
-.low:
-    sub al, 'a'
-    add al, 10
-    ret
-
-bad:
-    xor al, al
-    ret
+msg: db 'meow ^^', 10, 0
 
 times 510-($-$$) db 0
-dw 0xaa55
+  dw 0xAA55
