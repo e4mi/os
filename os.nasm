@@ -4,8 +4,11 @@ jmp start
 dict dw 0
 heap dw 0x9000
 
-%macro _push 1
+%macro _val 1
   mov ax, %1
+%endmacro
+
+%macro _push 0
   sub bp, 2
   mov [bp], ax
 %endmacro
@@ -14,6 +17,21 @@ heap dw 0x9000
   mov ax, [bp]
   add bp, 2
 %endmacro
+
+_read : ; ( addr -- )
+  _pop
+  mov bx, ax
+  mov ax, [bx]
+  _push
+  ret
+
+_write: ; ( value addr -- )
+  _pop
+  mov bx, ax
+  _pop
+  mov [bx], ax
+  ret
+  
 
 _load: ; ( addr sector -- addr )
   _pop
@@ -26,7 +44,8 @@ _load: ; ( addr sector -- addr )
   mov ah, 2
   mov al, 1
   int 13h
-  _push bx
+  mov ax, bx
+  _push
   ret
 
 _goto: ; ( addr -- )
@@ -51,7 +70,7 @@ _print: ; ( addr -- )
   lodsb
   or al, al
   jz .plend
-  _push ax
+  _push
   call _emit
   jmp .pls
 .plend:
@@ -80,7 +99,7 @@ _print_dec: ; ( number -- )
     add dl, '0'
     mov al, dl
     xor ah, ah
-    _push ax
+    _push
     call _emit
     loop .print_loop
   ret
@@ -101,11 +120,20 @@ _same: ; ( addr1 addr2 -- addr1==addr2 )
     inc di
     jmp .compare_loop
   .not_equal:
-    _push 0
+    xor ax, ax
+    _push
     xor cx, cx
   .equal:
-    _push 1
+    mov ax, 1
+    _push
     ret
+
+_env: ; ( name -- addr )
+  _pop
+  mov bx, [dict]
+  mov cx, [bx]
+
+  ret
 
 _print_hex: ; ( number -- )
   _pop
@@ -121,12 +149,16 @@ _print_hex: ; ( number -- )
   .ok:
     pusha
     mov al, bl
-    _push ax
+    _push
     call _emit
     popa
     rol ax, 4
     loop .ph
     ret
+  
+_exit:
+  hlt
+  jmp $
 
 
 start:
@@ -135,25 +167,28 @@ start:
   mov es, ax
   mov bp, 0x9000
 
-  _push msg
+  _val msg
+  _push
   call _print
-  _push 123
+  _val 123
+  _push
   call _print_dec
-  _push 10
+  _val 10
+  _push
   call _emit
 
-  _push 0x1234
+  _val 0x1234
+  _push
   call _print_hex
-  _push 10
+  _val 10
+  _push
   call _emit
+  call _exit
 
   ; _push 0x0800
   ; _push 2
   ; call _load
   ; call _goto
-
-  hlt
-  jmp $
 
 msg: db 'meow ^^', 10, 0
 
