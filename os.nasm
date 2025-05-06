@@ -42,7 +42,20 @@ emit: ; ( char -- )
   .nonl:
   ret
 
-print_number:
+print_str: ; ( addr -- )
+  dpop
+  mov si, ax
+.pls:
+  lodsb
+  or al, al
+  jz .plend
+  dpush ax
+  call emit
+  jmp .pls
+.plend:
+  ret
+
+print_number: ; ( number -- )
   dpop
   cmp ax, 0
   jne .convert
@@ -83,12 +96,11 @@ start:
   call print_number
   dpush 10
   call emit
-  jmp $
 
-  dpush 0x0800
-  dpush 2
-  call load_fda
-  call goto_addr
+  ; dpush 0x0800
+  ; dpush 2
+  ; call load_fda
+  ; call goto_addr
 
   hlt
   jmp $
