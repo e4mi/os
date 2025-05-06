@@ -1,24 +1,22 @@
 org 0x7c00
-%define ipush(x) push x
-%define ipop() pop ax
 
 jmp start
 
-%macro push 1
+%macro dpush 1
   mov ax, %1
   sub bp, 2
   mov [bp], ax
 %endmacro
 
-%macro pop 0
+%macro dpop 0
   mov ax, [bp]
   add bp, 2
 %endmacro
 
 load_fda: ; ( addr sector -- addr )
-  pop
+  dpop
   mov cl, al
-  pop
+  dpop
   mov bx, ax
   xor dh, dh
   xor ch, ch
@@ -26,15 +24,15 @@ load_fda: ; ( addr sector -- addr )
   mov ah, 2
   mov al, 1
   int 13h
-  push bx
+  dpush bx
   ret
 
 goto_addr: ; ( addr -- )
-  pop
+  dpop
   jmp ax
 
 emit: ; ( char -- )
-  pop
+  dpop
   mov ah, 0x0e
   int 10h
   cmp al, 10
@@ -44,37 +42,34 @@ emit: ; ( char -- )
   .nonl:
   ret
 
-print_str: ; ( addr -- )
-  pop
-  mov si, ax
-.pls:
-  lodsb
-  or al, al
-  jz .plend
-  push ax
-  call emit
-  jmp .pls
-.plend:
+print_number:
+  dpop
+  cmp ax, 0
+  jne .convert
+  .zero:
+    mov al, '0'
+    call emit
+    ret
+  .convert:
+    mov cx, 0
+    mov bx, 10
+  .digit_loop:
+    xor dx, dx
+    div bx ; ax = ax / 10, dx = ax % 10
+    push dx
+    inc cx
+    or ax, ax
+    jnz .digit_loop
+  .print_loop:
+    pop dx
+    add dl, '0'
+    mov al, dl
+    xor ah, ah
+    dpush ax
+    call emit
+    loop .print_loop
   ret
 
-print_num: ; ( num -- )
-  pop
-  mov cx, 0
-  mov bx, 10
-.pn1:
-  xor dx, dx
-  div bx         ; AX=quot, DX=rem
-  push dx
-  inc cx
-  or ax, ax
-  jnz .pn1
-.pn2:
-  pop             ; DX
-  add dl, '0'
-  push dx
-  call emit
-  loop .pn2
-  ret
 
 start:
   xor ax, ax
@@ -82,12 +77,16 @@ start:
   mov es, ax
   mov bp, 0x9000
 
-  push msg
+  dpush msg
   call print_str
+  dpush 123
+  call print_number
+  dpush 10
+  call emit
   jmp $
 
-  push 0x0800
-  push 2
+  dpush 0x0800
+  dpush 2
   call load_fda
   call goto_addr
 
