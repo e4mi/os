@@ -1,22 +1,24 @@
 org 0x7c00
 
 jmp start
+dict dw 0
+heap dw 0x9000
 
-%macro dpush 1
+%macro _push 1
   mov ax, %1
   sub bp, 2
   mov [bp], ax
 %endmacro
 
-%macro dpop 0
+%macro _pop 0
   mov ax, [bp]
   add bp, 2
 %endmacro
 
-load_fda: ; ( addr sector -- addr )
-  dpop
+_load: ; ( addr sector -- addr )
+  _pop
   mov cl, al
-  dpop
+  _pop
   mov bx, ax
   xor dh, dh
   xor ch, ch
@@ -24,15 +26,15 @@ load_fda: ; ( addr sector -- addr )
   mov ah, 2
   mov al, 1
   int 13h
-  dpush bx
+  _push bx
   ret
 
-goto_addr: ; ( addr -- )
-  dpop
+_goto: ; ( addr -- )
+  _pop
   jmp ax
 
-emit: ; ( char -- )
-  dpop
+_emit: ; ( char -- )
+  _pop
   mov ah, 0x0e
   int 10h
   cmp al, 10
@@ -42,26 +44,26 @@ emit: ; ( char -- )
   .nonl:
   ret
 
-print_str: ; ( addr -- )
-  dpop
+_print: ; ( addr -- )
+  _pop
   mov si, ax
 .pls:
   lodsb
   or al, al
   jz .plend
-  dpush ax
-  call emit
+  _push ax
+  call _emit
   jmp .pls
 .plend:
   ret
 
-print_number: ; ( number -- )
-  dpop
+_print_dec: ; ( number -- )
+  _pop
   cmp ax, 0
   jne .convert
   .zero:
     mov al, '0'
-    call emit
+    call _emit
     ret
   .convert:
     mov cx, 0
@@ -78,33 +80,53 @@ print_number: ; ( number -- )
     add dl, '0'
     mov al, dl
     xor ah, ah
-    dpush ax
-    call emit
+    _push ax
+    call _emit
     loop .print_loop
   ret
 
-print_hex:
-  dpop
+_same: ; ( addr1 addr2 -- addr1==addr2 )
+  _pop
+  mov si, ax
+  _pop
+  mov di, ax
+  xor cx, cx
+  .compare_loop:
+    lodsb
+    cmp al, [di]
+    jne .not_equal
+    or al, al
+    jz .equal
+    inc cx
+    inc di
+    jmp .compare_loop
+  .not_equal:
+    _push 0
+    xor cx, cx
+  .equal:
+    _push 1
+    ret
+
+_print_hex: ; ( number -- )
+  _pop
   mov cx, 4
   rol ax, 12     ; rotate MSB nibble into upper 4 bits
-.ph:
-  mov bl, ah
-  and bl, 0xf
-  add bl, '0'
-  cmp bl, '9'
-  jbe .ok
-  add bl, 7
-.ok:
-  push ax
-  mov al, bl
-  mov ah, 0x0e
-  int 10h
-  pop ax
-  rol ax, 4
-  loop .ph
-  ret
-
-
+  .ph:
+    mov bl, ah
+    and bl, 0xf
+    add bl, '0'
+    cmp bl, '9'
+    jbe .ok
+    add bl, 7
+  .ok:
+    pusha
+    mov al, bl
+    _push ax
+    call _emit
+    popa
+    rol ax, 4
+    loop .ph
+    ret
 
 
 start:
@@ -113,22 +135,22 @@ start:
   mov es, ax
   mov bp, 0x9000
 
-  dpush msg
-  call print_str
-  dpush 123
-  call print_number
-  dpush 10
-  call emit
+  _push msg
+  call _print
+  _push 123
+  call _print_dec
+  _push 10
+  call _emit
 
-  dpush 0x1234
-  call print_hex
-  dpush 10
-  call emit
+  _push 0x1234
+  call _print_hex
+  _push 10
+  call _emit
 
-  ; dpush 0x0800
-  ; dpush 2
-  ; call load_fda
-  ; call goto_addr
+  ; _push 0x0800
+  ; _push 2
+  ; call _load
+  ; call _goto
 
   hlt
   jmp $
