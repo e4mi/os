@@ -31,7 +31,6 @@ _write: ; ( value addr -- )
   _pop
   mov [bx], ax
   ret
-  
 
 _load: ; ( addr sector -- addr )
   _pop
@@ -128,12 +127,59 @@ _same: ; ( addr1 addr2 -- addr1==addr2 )
     _push
     ret
 
-_env: ; ( name -- addr )
+_dup: ; ( addr -- addr addr )
   _pop
-  mov bx, [dict]
-  mov cx, [bx]
-
+  push ax
+  push ax
   ret
+
+_swap: ; ( addr1 addr2 -- addr2 addr1 )
+  _pop
+  mov bx, ax
+  _pop
+  mov cx, ax
+  mov ax, bx
+  _push
+  mov ax, cx
+  _push
+  ret
+
+_add: ; ( addr1 addr2 -- addr1+addr2 )
+  _pop
+  mov bx, ax
+  _pop
+  add ax, bx
+  _push
+  ret
+
+; dict = [*next] -> [*name, *addr, *next]...
+_env: ; ( name -- addr )
+  _val 0x9000     ; start of dictionary
+  call _read      ; dereference -> current entry ptr
+.next:
+  call _dup
+  call _read      ; [addr] -> name ptr
+  call _swap
+  call _same      ; compare with input
+  _pop
+  cmp ax, 0
+  jne .found
+  call _read      ; move to next entry
+  call _dup
+  or ax, ax
+  jnz .next
+  jmp .fail
+.found:
+  _val 1
+  _push
+  call _add
+  call _read      ; get code address
+  ret
+.fail:
+  _val 0
+  _push
+  ret
+
 
 _print_hex: ; ( number -- )
   _pop
