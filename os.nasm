@@ -83,6 +83,29 @@ print_number: ; ( number -- )
     loop .print_loop
   ret
 
+print_hex:
+  dpop
+  mov cx, 4
+  rol ax, 12     ; rotate MSB nibble into upper 4 bits
+.ph:
+  mov bl, ah
+  and bl, 0xf
+  add bl, '0'
+  cmp bl, '9'
+  jbe .ok
+  add bl, 7
+.ok:
+  push ax
+  mov al, bl
+  mov ah, 0x0e
+  int 10h
+  pop ax
+  rol ax, 4
+  loop .ph
+  ret
+
+
+
 
 start:
   xor ax, ax
@@ -94,6 +117,11 @@ start:
   call print_str
   dpush 123
   call print_number
+  dpush 10
+  call emit
+
+  dpush 0x1234
+  call print_hex
   dpush 10
   call emit
 
