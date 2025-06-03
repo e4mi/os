@@ -5,8 +5,8 @@ tiny 8086 os (wip)
 - bootable from floppy
 
 usage:
-  nasm os.nasm -o os.bin
-  qemu-system-i386 -fda os.bin
+  nasm os.nasm
+  qemu-system-i386 -fda os
 
 maybe:
 - lisp-like language

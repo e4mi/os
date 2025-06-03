@@ -1,3 +1,6 @@
+; usage: sh os.nasm
+true : ; nasm os.nasm && exec qemu-system-i386 -fda os -nographic
+
 bits 16
 ; setup stack
 ; org 0x7c00
