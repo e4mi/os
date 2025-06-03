@@ -1,0 +1,2 @@
+#!/bin/sh
+blinkenlights -rtR os.bin
