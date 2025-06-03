@@ -1,2 +1,0 @@
-#!/bin/sh
-qemu-system-i386 -fda os.bin -nographic -boot a -serial mon:stdio

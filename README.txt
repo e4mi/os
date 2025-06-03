@@ -1,12 +1,15 @@
-deps:
-  nasm
-  qemu-system-i386 (for emulation)
-  blinkenlights (for debugging)
+tiny 8086 os (wip)
 
-optionally use docker:
-  docker build -t os . && docker run --rm -itv./:/w -w/w os
+features:
+- fits in 512 bytes
+- bootstrapped from NASM
+- bootable from floppy
+
+todo:
+- forth-like interpreter
+- lisp-like interpreter
+- builds itself on the fly
 
 usage:
-  ./mk   # builds ./os.bin
-  ./emu  # ctrl+a,x to exit
-  ./dbg  # ctrl+c to exit
+  nasm os.nasm -o os.bin
+  qemu-system-i386 -fda os.bin
