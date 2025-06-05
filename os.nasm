@@ -1,10 +1,12 @@
-; usage: sh os.nasm
-true : ; nasm os.nasm && exec qemu-system-i386 -fda os -nographic
+true :; nasm os.nasm && qemu-system-i386 -fda os -nographic; exit
 
 bits 16
 ; setup stack
 ; org 0x7c00
 mov sp, 0x7c00
+jmp main
+here dw 0x0000
+
 
 ;load sectors from floppy
 ; mov ax, 0x07e0
@@ -43,6 +45,25 @@ main:
   call if
   jmp .in
   call exit
+
+alloc: ; (size -- addr)
+  pop bp
+  pop ax
+  push word [here]
+  add ax, ax
+  add [here], ax
+  jmp bp
+
+cons: ; (x y -- pair)
+  push 2
+  call alloc
+  pop di
+  pop bp
+  pop ax
+  stosw
+  pop ax
+  stosw
+  jmp bp
 
 dup: ; (x -- x x)
   pop bp
