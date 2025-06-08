@@ -1,14 +1,17 @@
-tiny 8086 os (wip)
+Tiny OS for 8086
+- in NASM and ansi C
+- compiles to a bootable floppy image
+- bootable from qemu
+- optional docker for building
 
-- fits in 512 bytes
-- bootstrapped from NASM
-- bootable from floppy
+INSTALL:
+  make
+  make run
 
-usage:
-  nasm os.nasm
-  qemu-system-i386 -fda os
+DEPS: gcc make nasm
+OPTIONAL: qemu-system-i386 blinkenlights
 
-maybe:
-- lisp-like language
-- file system
-- text editor
+WISHLIST:
+- own lisp-like language
+- filesystem
+- editor
