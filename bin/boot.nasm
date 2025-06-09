@@ -13,23 +13,25 @@ sti
 ; load from floppy
 mov ax, 0x07e0
 mov es, ax
-mov ax, 0x0200 + ((KERNEL_SIZE + 511) / 512)
+mov ax, 0x0200 + ((SIZE + 511) / 512)
 mov cx, 0x0002
 xor dx, dx
 xor bx, bx
 int 0x13
-jc .hlt
+jc .stop
 
+; start kernel
 jmp 0x7e00
 
-.hlt: hlt
-jmp .hlt
+; stop on error
+.stop: hlt
+jmp .stop
 
 ; boot signature
 times 510-($-$$) db 0
 dw 0xaa55
 
-incbin KERNEL_FILE
+incbin FILE
 
 ; padding to sectors needed by blinkenlights
 times (512 - ($ - $$) % 512) % 512 db 0
