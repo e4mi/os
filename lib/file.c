@@ -9,20 +9,20 @@ typedef struct {
   unsigned int size;
 } FileEntry;
 
-static unsigned char _Table[SECTOR_SIZE];
+static unsigned char Table[SECTOR_SIZE];
 
 void FileList();
 int FileRead(char *filename, unsigned char *buffer);
 int FileWrite(char *filename, unsigned char *buffer, unsigned int size);
-static unsigned short _FreeDirSector(), _FreeSector();
-static void _ReadSector(unsigned int lba, unsigned char *buffer);
-static void _WriteSector(unsigned int lba, unsigned char *buffer);
-static void _LoadTable() { _ReadSector(2, _Table); }
+static unsigned short FreeDirSector(), FreeSector();
+static void ReadSector(unsigned int lba, unsigned char *buffer);
+static void WriteSector(unsigned int lba, unsigned char *buffer);
+static void LoadTable() { ReadSector(2, Table); }
 
 void FileList() {
   unsigned char sector[SECTOR_SIZE];
   for (unsigned short dir_sector = 1; dir_sector != 0xFFFF;) {
-    _ReadSector(dir_sector, sector);
+    ReadSector(dir_sector, sector);
     FileEntry *entry = (FileEntry *)sector;
     for (int i = 0; i < SECTOR_SIZE / sizeof(FileEntry) && entry[i].filename[0];
          i++)
@@ -34,13 +34,13 @@ void FileList() {
 int FileRead(char *filename, unsigned char *buffer) {
   unsigned char sector[SECTOR_SIZE];
   for (unsigned short dir_sector = 1; dir_sector != 0xFFFF;) {
-    _ReadSector(dir_sector, sector);
+    ReadSector(dir_sector, sector);
     FileEntry *entry = (FileEntry *)sector;
     for (int i = 0; i < SECTOR_SIZE / sizeof(FileEntry); i++)
       if (OsStringCompare(entry[i].filename, filename) == 0) {
         for (unsigned short s = entry[i].first_sector; s != 0xFFFF;
-             s = _Table[s])
-          _ReadSector(s, buffer), buffer += SECTOR_SIZE;
+             s = Table[s])
+          ReadSector(s, buffer), buffer += SECTOR_SIZE;
         return entry[i].size;
       }
     dir_sector = entry->next_entry_sector;
@@ -51,52 +51,52 @@ int FileRead(char *filename, unsigned char *buffer) {
 int FileWrite(char *filename, unsigned char *buffer, unsigned int size) {
   unsigned char sector[SECTOR_SIZE];
   FileEntry *entry = (FileEntry *)sector;
-  _ReadSector(_FreeDirSector(), sector), _LoadTable();
+  ReadSector(FreeDirSector(), sector), LoadTable();
 
   for (int i = 0; i < SECTOR_SIZE / sizeof(FileEntry); i++)
     if (!entry[i].filename[0]) {
       OsCopy(entry[i].filename, filename, 64);
-      entry[i].first_sector = _FreeSector(), entry[i].size = size,
+      entry[i].first_sector = FreeSector(), entry[i].size = size,
       entry[i].next_entry_sector = 0xFFFF;
-      _WriteSector(_FreeDirSector(), sector);
+      WriteSector(FreeDirSector(), sector);
       break;
     }
 
   for (unsigned short s = entry->first_sector; size > 0;
-       s = _FreeSector()) {
-    _WriteSector(s, buffer), buffer += SECTOR_SIZE, size -= SECTOR_SIZE;
-    _Table[s] = _FreeSector();
+       s = FreeSector()) {
+    WriteSector(s, buffer), buffer += SECTOR_SIZE, size -= SECTOR_SIZE;
+    Table[s] = FreeSector();
   }
-  _Table[_FreeSector()] = (unsigned char)0xFFFF,
-  _WriteSector(2, _Table);
+  Table[FreeSector()] = (unsigned char)0xFFFF,
+  WriteSector(2, Table);
   return 0;
 }
 
-unsigned short _FreeDirSector() {
+unsigned short FreeDirSector() {
   unsigned char buffer[SECTOR_SIZE];
   for (unsigned short sector = 1; sector != 0xFFFF;) {
-    _ReadSector(sector, buffer);
+    ReadSector(sector, buffer);
     FileEntry *entry = (FileEntry *)buffer;
     if (entry->next_entry_sector == 0xFFFF)
-      return entry->next_entry_sector = _FreeSector(),
-             _WriteSector(sector, buffer), _FreeSector();
+      return entry->next_entry_sector = FreeSector(),
+             WriteSector(sector, buffer), FreeSector();
     sector = entry->next_entry_sector;
   }
-  return _FreeSector();
+  return FreeSector();
 }
 
-unsigned short _FreeSector() {
+unsigned short FreeSector() {
   for (unsigned short i = 3; i < 4096; i++)
-    if (!_Table[i])
+    if (!Table[i])
       return i;
   return 0xFFFF;
 }
 
-void _ReadSector(unsigned int lba, unsigned char *buffer) {
+void ReadSector(unsigned int lba, unsigned char *buffer) {
   asm volatile("int $0x13" ::"a"(0x02), "b"(0x01), "c"(lba / 18),
                "d"((lba % 18) + 1), "D"(buffer));
 }
-void _WriteSector(unsigned int lba, unsigned char *buffer) {
+void WriteSector(unsigned int lba, unsigned char *buffer) {
   asm volatile("int $0x13" ::"a"(0x03), "b"(0x01), "c"(lba / 18),
                "d"((lba % 18) + 1), "D"(buffer));
 }

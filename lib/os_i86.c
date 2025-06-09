@@ -1,25 +1,35 @@
 #pragma once
 static char *_HEAP = (char *)0x10000;
 static char *_HEAP_MAX = (char *)0x9FBFF;
-static const char *_ERROR = "\n>_< full!\n";
 
 void *OsAlloc(int n);
+void OsFree(void *ptr);
 void OsClear(void);
 void OsEmit(char c);
 void OsExit(int code);
 char OsKey(void);
 
 void *OsAlloc(int n) {
-  char *r = _HEAP;
-  _HEAP += (n + 3) & ~3;
-  if (_HEAP >= _HEAP_MAX) {
-    const char *p;
-    for (p = _ERROR; *p; p++) {
-      OsEmit(*p);
+    void *r;
+    const char *p = "\n>_< full!\n";
+    n = (n + 3) & ~3;
+    if (_HEAP + n + sizeof(int) >= _HEAP_MAX) {
+        for (; *p; p++) { OsEmit(*p); }
+        OsExit(1);
     }
-    OsExit(1);
-  }
-  return r;
+    r = _HEAP;
+    *((int*)r) = n;
+    _HEAP += n + sizeof(int);
+    return (void*)((char*)r + sizeof(int));
+}
+
+
+int OsAllocSize(void *ptr) {
+  return ((int*)ptr)[-1];
+}
+
+void OsFree(void *ptr) {
+  /* TODO: free */
 }
 
 void OsClear(void) {

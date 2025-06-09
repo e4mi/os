@@ -1,7 +1,6 @@
 #pragma once
 __asm__ ("jmp _start");
 
-
 #include "os_i86.c"
 
 extern int main(void);
@@ -10,7 +9,9 @@ void _start(void) { OsExit(main()); }
 void OsCopy(void *dest, void *src, int n);
 void OsPrint(char *s);
 void OsPrintNumber(int n);
+void OsPrintString(char *s);
 void OsReadLine(char *buf, int size);
+void* OsRealloc(void *ptr, int n);
 int OsStringCompare(char *s1, char *s2);
 
 void OsCopy(void *dest, void *src, int n) {
@@ -43,6 +44,18 @@ void OsPrintNumber(int n) {
   OsEmit((n % 10) + '0');
 }
 
+void OsPrintString(char *s) {
+  int i;
+  OsEmit('"');
+  for (i = 0; s[i]; i++) {
+    if (s[i] == '"' || s[i] == '\\') {
+      OsEmit('\\');
+    }
+    OsEmit(s[i]);
+  }
+  OsEmit('"');
+}
+
 void OsReadLine(char *buf, int size) {
   int i = 0;
   char c;
@@ -60,6 +73,18 @@ void OsReadLine(char *buf, int size) {
     }
   }
   buf[i] = 0;
+}
+
+void* OsRealloc(void *ptr, int n) {
+  void *r;
+  int copySize = OsAllocSize(ptr);
+  if (copySize >= n) copySize = n;
+  if (!ptr) return OsAlloc(n);
+  r = OsAlloc(n);
+  if (!r) return 0;
+  OsCopy(r, ptr, copySize);
+  OsFree(ptr);
+  return r;
 }
 
 int OsStringCompare(char *s1, char *s2) {

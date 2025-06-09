@@ -6,10 +6,10 @@ clean:
 docker:
 	docker build -t $(ID) .
 	docker run -it --rm -v ./:/src -w /src $(ID)
-os.bin: bin/boot.nasm bin/kernel.c lib/os.c lib/os_i86.c lib/file.c
-	./cc bin/kernel.c -o kernel.bin
-	nasm -f bin bin/boot.nasm -o os.bin -DFILE=\"kernel.bin\" -DSIZE=$$(stat -c%s kernel.bin)
-	rm kernel.bin
+os.bin: bin/boot.nasm bin/lisp.c lib/os.c lib/os_i86.c lib/file.c
+	./cc bin/lisp.c -o lisp.bin
+	nasm -f bin bin/boot.nasm -o os.bin -DFILE=\"lisp.bin\" -DSIZE=$$(stat -c%s lisp.bin)
+	rm lisp.bin
 	wc -c os.bin
 run: os.bin
 	qemu-system-i386 -fda os.bin -boot a -nographic
