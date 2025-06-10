@@ -3,12 +3,11 @@ bits 16
 
 extern main
 global putchar
-global printf
 global exit
 global clear
 global getchar
 
-bootloader:
+_bootloader:
 .stack:
   cli
   xor ax, ax
@@ -29,55 +28,48 @@ bootloader:
 .start:
   call main
 .error:
-  call .msg
-  db 13, 10, ">_< meow?!", 13, 10, 0
-.msg:
-  push 0
-  call printf
+  mov si, .msg
+  call _print
   jmp exit
+.msg:
+  db 13, 10, ">_< meow?!", 13, 10, 0
+
+_print:
+.loop:
+  lodsb
+  test al, al
+  jz .done
+.emit:
+  mov ah, 0x0e
+  int 0x10
+  cmp al, 10
+  jne .loop
+.nl:
+  mov al, 13
+  int 0x10
+  jmp .loop
+.done:
+  ret
 
 putchar:
   push bp
   mov bp, sp
   mov ax, [bp+6]
   mov ah, 0x0e
-  cmp al, 10
-  je .nl
-.char:
   int 0x10
-  pop bp
-  ret
+  cmp al, 10
+  jne .done
 .nl:
   mov al, 13
   int 0x10
-  mov al, 10
-  int 0x10
-  pop bp
-  ret
-
-printf:
-  push bp
-  mov bp, sp
-  mov si, [bp+6]
-.loop:
-  lodsb
-  cmp al, 0
-  je .done
-  mov ah, 0x0e
-  int 0x10
-  cmp al, 10
-  jne .loop
-  mov al, 13
-  int 0x10
-  jmp .loop
 .done:
   pop bp
   ret
 
 exit:
-.l:
+.loop:
   hlt
-  jmp .l
+  jmp .loop
 
 clear:
   mov ax, 0x0600
@@ -85,6 +77,7 @@ clear:
   xor cx, cx
   mov dx, 0x184F
   int 0x10
+.cursor_home:
   mov ax, 0x0200
   xor bx, bx
   xor dx, dx
@@ -95,15 +88,15 @@ getchar:
   push bp
   mov ah, 0x00
   int 0x16
+  xor ah, ah
   cmp al, 13
-  jne .c
+  jne .done
 .nl:
   mov al, 10
-.c:
-  mov ah, 0
+.done:
   pop bp
   ret
 
-bootSignature:
+_signature:
   times 510 - ($ - $$) db 0
   dw 0xAA55

@@ -1,6 +1,6 @@
 ID := os
 CC := gcc
-CFLAGS = -m16 -ffreestanding -nostdlib -nostartfiles -fno-pic -fno-pie -Os -ffunction-sections -fdata-sections -Wl,--gc-sections -std=c89 -pedantic -Wall -Wextra
+CFLAGS = -m16 -ffreestanding -nostdlib -nostartfiles -fno-pic -fno-pie -Os -ffunction-sections -fdata-sections -Wl,--gc-sections -std=c89 -pedantic -Wall -Wextra -Werror
 SIZE = $(shell expr 4 \* 1024)
 .PHONY: all clean docker run debug
 all: os.bin

@@ -4,21 +4,21 @@
 int main(void) {
   char *line;
   clear();
-  printf("\n _^..^_ meow!\n\n");
+  puts("\n _^..^_ meow!\n");
   line = malloc(1024);
   while (1) {
-    printf("> ");
+    fputs("> ", stdout);
     readline(line, 1024);
-    printf("\n");
+    puts("");
     if (strcmp(line, "exit") == 0) {
       break;
     } else if (strcmp(line, "help") == 0) {
-      printf("lang, exit, help\n");
+      puts("lang, exit, help");
     } else if (strcmp(line, "lang") == 0) {
       lang();
     }
   }
-  printf("byeeeee...\n");
+  puts("byeeeee...");
   free(line);
   return 0;
 }

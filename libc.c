@@ -2,16 +2,26 @@
 #pragma once
 
 /* from libc_i86.asm */
-extern void printf(char *s);
+extern void print(const char *s);
 extern void putchar(int c);
 extern char getchar(void);
 extern void exit(int code);
 extern void clear(void);
 
 typedef unsigned long size_t;
+enum { stdin, stdout, stderr };
 
 static void *heap = (void *)0x10000;
 static const void *heapMax = (void *)0x9FBFF;
+
+void fputs(const char *s, ...) {
+  while (*s) putchar(*s++);
+}
+
+void puts(const char *s) {
+  while (*s) putchar(*s++);
+  putchar('\n');
+}
 
 void* memcpy(void *dst, const void *src, size_t n) {
   size_t i;
@@ -25,7 +35,7 @@ void *malloc(size_t n) {
   void *r;
   n = (n + 3) & ~3;
   if ((char*)heap + n + sizeof(size_t) >= (char*)heapMax) {
-    printf("\n>_< full!\n");
+    fputs("\n>_< full!\n", stderr);
     exit(1);
   }
   r = heap;
@@ -88,4 +98,18 @@ char* strndup(const char *s, size_t n) {
 int strcmp(const char *s1, const char *s2) {
   while (*s1 && *s1 == *s2) s1++, s2++;
   return *s1 - *s2;
+}
+
+char itoa(int n, char *s, int base) {
+  int i = 0;
+  if (n < 0) {
+    s[i++] = '-';
+    n = -n;
+  }
+  while (n) {
+    s[i++] = n % base + '0';
+    n /= base;
+  }
+  s[i] = 0;
+  return i;
 }

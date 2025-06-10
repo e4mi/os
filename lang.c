@@ -48,21 +48,46 @@ void* parse(char **s) {
   return v;
 }
 
+void printValue(void *v) {
+  if (!v) {
+    puts("()");
+  } else if (type(v) == PAIR) {
+    putchar('(');
+    printValue(head(v));
+    for (v = tail(v); head(v); v = tail(v)) {
+      putchar(' ');
+      printValue(head(v));
+    }
+    if (v) {
+      fputs(" . ", stdout);
+      printValue(v);
+    }
+    putchar(')');
+  } else if (type(v) == NUM) {
+    char buf[12];
+    itoa(((Num *)v)->n, buf, 10);
+    fputs(buf, stdout);
+  } else if (type(v) == SYM) {
+    fputs(((Sym *)v)->s, stdout);
+  }
+}
+
 void lang(void) {
   char *line, *p;
   void *x;
   line = malloc(1024);
-  printf("\n");
+  putchar('\n');
   while (1) {
-    printf(": ");
+    fputs(": ", stdout);
     readline(line, 1024);
-    printf("\n");
+    putchar('\n');
     p = line;
     if (strcmp(line, "exit") == 0) {
-      printf("\n");
+      putchar('\n');
       break;
     }
     x = parse(&p);
+    printValue(x);
   }
   free(line);
 }
