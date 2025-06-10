@@ -1,5 +1,5 @@
 Tiny OS for 8086
-- in C99
+- in C89 and NASM
 - compiles to a bootable floppy image
 - runs in qemu
 - optional docker for building

@@ -1,0 +1,44 @@
+/* custom lisp-like language */
+#pragma once
+#include "./libc.c"
+
+typedef struct { int n; char *s; } Str; 
+typedef unsigned char u8;
+typedef struct { char t; void *a, *b; } Pair;
+typedef struct { char t; int n; } Num;
+typedef struct { char t; char *s; } Sym;
+const char NIL = 0;
+const char PAIR = 1;
+const char NUM = 2;
+const char SYM = 3;
+void* cons(void *a, void *b) { Pair* x = malloc(sizeof(Pair)); x->t = PAIR; x->a = a; x->b = b; return (void*)x; }
+void* num(int n) { Num* x = malloc(sizeof(Num)); x->t = NUM; x->n = n; return (void*)x; }
+void* sym(char *s, int n) { Sym* x = malloc(sizeof(Sym)); x->t = SYM; x->s = strndup(s, n); return (void*)x; }
+char type(void *v) { return *((char*) v); }
+void* head(void *v) { return type(v) == PAIR ? ((Pair*)v)->a : 0; }
+void* tail(void *v) { return type(v) == PAIR ? ((Pair*)v)->b : 0; }
+void* setHead(void *v, void *h) { return ((Pair*)v)->a = h; }
+void* setTail(void *v, void *t) { return ((Pair*)v)->b = t; }
+
+void* parse(char **s) {
+  char *p = *s, *q;
+  void *v = 0, *w, *z;
+  while (*p && *p <= ' ') (p)++;
+  if (*p == '(') {
+    (p)++;
+    w = cons(parse(&p), 0);
+    z = w;
+    while (head(z)) {
+      z = setTail(z, cons(parse(&p), 0));
+    }
+  } else if (*p == ')') {
+    (p)++;
+    return 0;
+  } else if (*p) {
+    for (q = p; *q > ' ' && *q != ')' && *q != '('; q++);
+    if (q > p) {
+      return sym(p, q - p);
+    }
+  }
+  return v;
+}
