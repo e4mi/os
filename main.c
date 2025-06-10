@@ -2,23 +2,23 @@
 #include "./lang.c"
 
 int main(void) {
-  char *line;
+  char *line = 0;
   clear();
-  puts("\n _^..^_ meow!\n");
-  line = malloc(1024);
+  print("\n _^..^_ meow!\n\n");
   while (1) {
-    fputs("> ", stdout);
-    readline(line, 1024);
-    puts("");
+    print("> ");
+    line = editline();
+    print("\n");
     if (strcmp(line, "exit") == 0) {
+      free(line);
       break;
     } else if (strcmp(line, "help") == 0) {
-      puts("lang, exit, help");
+      print("lang, exit, help\n");
     } else if (strcmp(line, "lang") == 0) {
       lang();
     }
+    free(line);
   }
-  puts("byeeeee...");
-  free(line);
+  print("byeeeee...\n");
   return 0;
 }

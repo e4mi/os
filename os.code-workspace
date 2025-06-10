@@ -1,0 +1,26 @@
+{
+  "folders": [
+    {
+      "path": "."
+    }
+  ],
+  "settings": {
+    "nasm.extraFlags": ["-DSIZE=0"],
+    "nasm.outputFormat": "elf32",
+    "nasm.checkOnType": true,
+    "clangd.fallbackFlags": [
+      "-std=c89",
+      "-pedantic",
+      "-Wall",
+      "-Wextra",
+      "-Werror"
+    ]
+  },
+  "extensions": {
+    "recommendations": [
+      "llvm-vs-code-extensions.vscode-clangd",
+      "doinkythederp.nasm-language-support",
+      "ms-vscode.makefile-tools"
+    ]
+  }
+}

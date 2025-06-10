@@ -8,11 +8,20 @@ extern char getchar(void);
 extern void exit(int code);
 extern void clear(void);
 
+typedef unsigned char byte_t;
 typedef unsigned long size_t;
 enum { stdin, stdout, stderr };
 
 static void *heap = (void *)0x10000;
 static const void *heapMax = (void *)0x9FBFF;
+
+int max(int a, int b) {
+  return a > b ? a : b;
+}
+
+int min(int a, int b) {
+  return a < b ? a : b;
+}
 
 void fputs(const char *s, ...) {
   while (*s) putchar(*s++);

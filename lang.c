@@ -1,6 +1,7 @@
 /* custom lisp-like language */
 #pragma once
 #include "./libc.c"
+#include "./nice.c"
 
 typedef struct { int n; char *s; } Str; 
 typedef unsigned char u8;
@@ -50,44 +51,45 @@ void* parse(char **s) {
 
 void printValue(void *v) {
   if (!v) {
-    puts("()");
+    print("()\n");
   } else if (type(v) == PAIR) {
-    putchar('(');
+    print("('");
     printValue(head(v));
     for (v = tail(v); head(v); v = tail(v)) {
-      putchar(' ');
+      print(" ");
       printValue(head(v));
     }
     if (v) {
-      fputs(" . ", stdout);
+      print(" . ");
       printValue(v);
     }
-    putchar(')');
+    print(")");
   } else if (type(v) == NUM) {
     char buf[12];
     itoa(((Num *)v)->n, buf, 10);
-    fputs(buf, stdout);
+    print(buf);
   } else if (type(v) == SYM) {
-    fputs(((Sym *)v)->s, stdout);
+    print(((Sym *)v)->s);
   }
 }
 
 void lang(void) {
   char *line, *p;
   void *x;
-  line = malloc(1024);
-  putchar('\n');
+  print("\n");
   while (1) {
-    fputs(": ", stdout);
-    readline(line, 1024);
-    putchar('\n');
+    print(": ");
+    line = editline();
+    print("\n");
     p = line;
     if (strcmp(line, "exit") == 0) {
-      putchar('\n');
+      print("\n");
+      free(line);
       break;
     }
     x = parse(&p);
     printValue(x);
+    print("\n");
+    free(line);
   }
-  free(line);
 }
