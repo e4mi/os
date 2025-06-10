@@ -92,6 +92,7 @@ clear:
   ret
 
 getchar:
+  push bp
   mov ah, 0x00
   int 0x16
   cmp al, 13
@@ -100,6 +101,7 @@ getchar:
   mov al, 10
 .c:
   mov ah, 0
+  pop bp
   ret
 
 bootSignature:

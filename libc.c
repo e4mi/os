@@ -61,7 +61,7 @@ void *realloc(void *ptr, size_t n) {
 size_t readline(char *buf, size_t size) {
   size_t i = 0;
   char c;
-  while ((c = getchar()) > 0 && c != '\n' && i < size - 1) {
+  while ((c = getchar()) && c != '\n' && i < size - 1) {
     if ((c == '\b' || c == 0x7F)) {
       if (i > 0) {
         i--;

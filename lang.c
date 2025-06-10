@@ -23,22 +23,46 @@ void* setTail(void *v, void *t) { return ((Pair*)v)->b = t; }
 void* parse(char **s) {
   char *p = *s, *q;
   void *v = 0, *w, *z;
-  while (*p && *p <= ' ') (p)++;
+  while (*p && *p <= ' ') p++;
   if (*p == '(') {
-    (p)++;
+    p++;
     w = cons(parse(&p), 0);
     z = w;
     while (head(z)) {
       z = setTail(z, cons(parse(&p), 0));
     }
   } else if (*p == ')') {
-    (p)++;
+    p++;
     return 0;
+  } else if (*p == '"') {
+    p++;
+    for (q = p; *p && *p != '"'; p++);
+    if (!*p) return 0;
+    return cons(sym("quote", 5), cons(sym(q, p++ - q), 0));
   } else if (*p) {
-    for (q = p; *q > ' ' && *q != ')' && *q != '('; q++);
-    if (q > p) {
-      return sym(p, q - p);
+    for (q = p; *p > ' ' && *p != ')' && *p != '('; p++);
+    if (p > q) {
+      return sym(q, p - q);
     }
   }
   return v;
+}
+
+void lang(void) {
+  char *line, *p;
+  void *x;
+  line = malloc(1024);
+  printf("\n");
+  while (1) {
+    printf(": ");
+    readline(line, 1024);
+    printf("\n");
+    p = line;
+    if (strcmp(line, "exit") == 0) {
+      printf("\n");
+      break;
+    }
+    x = parse(&p);
+  }
+  free(line);
 }
