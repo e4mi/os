@@ -89,6 +89,10 @@ void *parse(char **p) {
     }
     for (q = *p; **p >= '0' && **p <= '9'; (*p)++)
       n = n * 10 + (**p - '0');
+    if (q == *p) {
+      (*p)--;
+      goto symbol;
+    }
     return num(n * sign);
   } else if (**p == '"') {
     (*p)++;
@@ -100,6 +104,7 @@ void *parse(char **p) {
     }
     return str(q, *(p++) - q);
   } else if (**p) {
+    symbol:
     for (q = *p; **p > ' ' && **p != ')' && **p != '('; (*p)++)
       ;
     return *p > q ? sym(q, *p - q) : 0;
@@ -169,9 +174,6 @@ void* eval(void *x, void **env) {
       }
       v = tail(v);
     }
-    print(">_< no ");
-    printValue(x);
-    print("\n");
     return 0;
   } else {
     return x;
@@ -185,10 +187,57 @@ void *prim_plus(void *arg) {
   return num(a + b);
 }
 
+void *prim_sum(void *arg) {
+  int val = 0;
+  void *v = arg;
+  while (head(v)) {
+    val += type(head(v)) == NUM ? ((Num *)head(v))->n : 0;
+    v = tail(v);
+  }
+  return num(val);
+}
+
+void *prim_sub(void *arg) {
+  int val = type(head(arg)) == NUM ? ((Num *)head(arg))->n : 0;
+  void *v = tail(arg);
+  while (head(v)) {
+    val -= type(head(v)) == NUM ? ((Num *)head(v))->n : 0;
+    v = tail(v);
+  }
+  return num(val);
+}
+
+void *prim_mul(void *arg) {
+  int val = 0;
+  void *v = arg;
+  while (head(v)) {
+    val *= type(head(v)) == NUM ? ((Num *)head(v))->n : 0;
+    v = tail(v);
+  }
+  return num(val);
+}
+
+void *prim_div(void *arg) {
+  int val = type(head(arg)) == NUM ? ((Num *)head(arg))->n : 0;
+  void *v = tail(arg);
+  while (head(v)) {
+    if (type(head(v)) == NUM && ((Num *)head(v))->n == 0) {
+      return 0;
+    }
+    val /= type(head(v)) == NUM ? ((Num *)head(v))->n : 0;
+    v = tail(v);
+  }
+  return num(val);
+}
+
 void lang(void) {
   char *line, *p;
   void *x, *env = 0;
-  env = cons(cons(sym("+", 1), prim((Fn)prim_plus)), env);
+  env = cons(
+    cons(sym("+", 1), prim((Fn)prim_sum)), cons(
+    cons(sym("-", 1), prim((Fn)prim_sub)), cons(
+    cons(sym("*", 1), prim((Fn)prim_mul)), cons(
+    cons(sym("/", 1), prim((Fn)prim_div)), env))));
   print("\n");
   while (1) {
     print(": ");

@@ -1,4 +1,5 @@
 #include "./libc.c"
+#include "./nice.c"
 #include "./lang.c"
 
 int main(void) {
