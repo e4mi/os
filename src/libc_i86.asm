@@ -1,3 +1,4 @@
+; NASM syntax
 section .text
 bits 16
 
