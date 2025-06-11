@@ -5,7 +5,7 @@ SIZE = $(shell expr 8 \* 1024)
 .PHONY: all clean docker run debug
 all: os.bin
 clean:
-	rm -f os.bin
+	rm -f os.bin libc_i86.o main.o
 docker:
 	docker build -t $(ID) .
 	docker run -it --rm -v ./:/src -w /src $(ID)

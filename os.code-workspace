@@ -13,14 +13,14 @@
       "-pedantic",
       "-Wall",
       "-Wextra",
-      "-Werror"
-    ]
+      "-Werror",
+      "-Wno-empty-translation-unit"
+    ],
   },
   "extensions": {
     "recommendations": [
       "llvm-vs-code-extensions.vscode-clangd",
-      "doinkythederp.nasm-language-support",
-      "ms-vscode.makefile-tools"
+      "doinkythederp.nasm-language-support"
     ]
   }
 }
