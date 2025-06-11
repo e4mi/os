@@ -51,7 +51,7 @@ void *malloc(size_t n) {
   return (void *)((char *)r + sizeof(size_t));
 }
 
-size_t _malloc_size(void *ptr) {
+size_t malloc_usable_size(void *ptr) {
   return ((size_t *)ptr)[-1];
 }
 
@@ -62,10 +62,11 @@ void free(void *ptr) {
 
 void *realloc(void *ptr, size_t n) {
   void *r;
-  size_t m = _malloc_size(ptr);
+  size_t m = malloc_usable_size(ptr);
   if (m >= n) {
-    m = n;
+    return ptr;
   }
+  n += 1024;
   if (!ptr) {
     return malloc(n);
   }
@@ -104,5 +105,10 @@ char* strndup(const char *s, size_t n) {
 
 int strcmp(const char *s1, const char *s2) {
   while (*s1 && *s1 == *s2) s1++, s2++;
+  return *s1 - *s2;
+}
+
+int strncmp(const char *s1, const char *s2, size_t n) {
+  while (n-- > 0 && *s1 && *s1 == *s2) s1++, s2++;
   return *s1 - *s2;
 }

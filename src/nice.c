@@ -53,3 +53,12 @@ char *editline(void) {
   }
   return line;
 }
+
+void *auto_alloc(void *ptr, size_t n) {
+  size_t m = malloc_usable_size(ptr);
+  if (m >= n) {
+    return ptr;
+  }
+  m = max(n + 1024, m * 2);
+  return realloc(ptr, n);
+}

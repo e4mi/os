@@ -13,7 +13,6 @@
       "-pedantic",
       "-Wall",
       "-Wextra",
-      "-Werror",
       "-Wno-empty-translation-unit"
     ]
   },
