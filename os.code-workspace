@@ -15,7 +15,7 @@
       "-Wextra",
       "-Werror",
       "-Wno-empty-translation-unit"
-    ],
+    ]
   },
   "extensions": {
     "recommendations": [

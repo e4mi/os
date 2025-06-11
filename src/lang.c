@@ -47,63 +47,64 @@ void setTail(void *v, void *t) {
     ((Pair *)v)->b = t;
 }
 
-void *parse(char **s) {
-  char *p = *s, *q;
+void *parse(char **p) {
+  char *q;
   void *v = 0, *z;
   int n = 0, sign = 1;
 
-  while (*p && *p <= ' ')
-    p++;
-  if (*p == '(') {
-    p++;
-    v = cons(parse(&p), 0);
+  while (**p && **p <= ' ') {
+    (*p)++;
+  }
+  if (**p == '(') {
+    (*p)++;
+    v = cons(parse(p), 0);
     z = v;
     while (head(z)) {
-      setTail(z, cons(parse(&p), 0));
+      setTail(z, cons(parse(p), 0));
       z = tail(z);
     }
     return v;
-  } else if (*p == ')') {
-    p++;
+  } else if (**p == ')') {
+    (*p)++;
     return 0;
-  } else if ((*p >= '0' && *p <= '9') || *p == '-') {
-    if (*p == '-') {
+  } else if ((**p >= '0' && **p <= '9') || **p == '-') {
+    if (**p == '-') {
       sign = -1;
-      p++;
+      (*p)++;
     }
-    for (q = p; *p >= '0' && *p <= '9'; p++)
-      n = n * 10 + (*p - '0');
+    for (q = *p; **p >= '0' && **p <= '9'; (*p)++)
+      n = n * 10 + (**p - '0');
     return num(n * sign);
-  } else if (*p == '"') {
-    p++;
-    for (q = p; *p && *p != '"';) {
-      p++;
+  } else if (**p == '"') {
+    (*p)++;
+    for (q = *p; **p && **p != '"';) {
+      (*p)++;
     }
-    if (!*p) {
+    if (!**p) {
       return 0;
     }
-    return cons(sym("quote", 5), cons(sym(q, p++ - q), 0));
-  } else if (*p) {
-    for (q = p; *p > ' ' && *p != ')' && *p != '('; p++)
+    return cons(sym("quote", 5), cons(sym(q, (*p)++ - q), 0));
+  } else if (**p) {
+    for (q = *p; **p > ' ' && **p != ')' && **p != '('; (*p)++)
       ;
-    return p > q ? sym(q, p - q) : 0;
+    return *p > q ? sym(q, *p - q) : 0;
   }
   return v;
 }
 
 void printValue(void *v) {
   if (!v) {
-    print("()\n");
+    print("nil");
     return;
   }
   if (type(v) == PAIR) {
-    print("('");
+    print("(");
     printValue(head(v));
     for (v = tail(v); head(v); v = tail(v)) {
       print(" ");
       printValue(head(v));
     }
-    if (v) {
+    if (v && type(v) != PAIR) {
       print(" . ");
       printValue(v);
     }
