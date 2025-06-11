@@ -4,14 +4,13 @@
 #include "./nice.c"
 
 /* clang-format off */
-typedef struct { int n; char *s; } Str; 
-typedef unsigned char u8;
 typedef struct { char t; void *a, *b; } Pair;
 typedef struct { char t; int n; } Num;
 typedef struct { char t; char *s; } Sym;
+typedef struct { char t; char *s; } Str; 
 /* clang-format on */
 
-const char NIL = 0, PAIR = 1, NUM = 2, SYM = 3;
+enum { NIL, PAIR, NUM, SYM, STR };
 
 void *cons(void *a, void *b) {
   Pair *x = malloc(sizeof(Pair));
@@ -31,6 +30,13 @@ void *num(int n) {
 void *sym(char *s, int n) {
   Sym *x = malloc(sizeof(Sym));
   x->t = SYM;
+  x->s = strndup(s, n);
+  return (void *)x;
+}
+
+void *str(char *s, int n) {
+  Str *x = malloc(sizeof(Str));
+  x->t = STR;
   x->s = strndup(s, n);
   return (void *)x;
 }
@@ -83,7 +89,7 @@ void *parse(char **p) {
     if (!**p) {
       return 0;
     }
-    return cons(sym("quote", 5), cons(sym(q, (*p)++ - q), 0));
+    return str(q, *(p++) - q);
   } else if (**p) {
     for (q = *p; **p > ' ' && **p != ')' && **p != '('; (*p)++)
       ;
@@ -93,6 +99,7 @@ void *parse(char **p) {
 }
 
 void printValue(void *v) {
+  char *p;
   if (!v) {
     print("nil");
     return;
@@ -113,6 +120,16 @@ void printValue(void *v) {
     printd(((Num *)v)->n);
   } else if (type(v) == SYM) {
     print(((Sym *)v)->s);
+  } else if (type(v) == STR) {
+    print("\"");
+    p = ((Str *)v)->s;
+    for (p = ((Str *)v)->s; *p; p++) {
+      if (*p == '"' || *p == '\\') {
+        print("\\");
+      }
+      putchar(*p);
+    }
+    print("\"");
   }
 }
 
