@@ -107,17 +107,3 @@ int strcmp(const char *s1, const char *s2) {
   while (*s1 && *s1 == *s2) s1++, s2++;
   return *s1 - *s2;
 }
-
-char itoa(int n, char *s, int base) {
-  int i = 0;
-  if (n < 0) {
-    s[i++] = '-';
-    n = -n;
-  }
-  while (n) {
-    s[i++] = n % base + '0';
-    n /= base;
-  }
-  s[i] = 0;
-  return i;
-}

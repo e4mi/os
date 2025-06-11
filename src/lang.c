@@ -1,4 +1,4 @@
-/* custom lisp-like language */
+/* Custom Lisp-like language */
 #pragma once
 #include "./libc.c"
 #include "./nice.c"
@@ -11,10 +11,8 @@ typedef struct { char t; int n; } Num;
 typedef struct { char t; char *s; } Sym;
 /* clang-format on */
 
-const char NIL = 0;
-const char PAIR = 1;
-const char NUM = 2;
-const char SYM = 3;
+const char NIL = 0, PAIR = 1, NUM = 2, SYM = 3;
+
 void *cons(void *a, void *b) {
   Pair *x = malloc(sizeof(Pair));
   x->t = PAIR;
@@ -22,37 +20,49 @@ void *cons(void *a, void *b) {
   x->b = b;
   return (void *)x;
 }
+
 void *num(int n) {
   Num *x = malloc(sizeof(Num));
   x->t = NUM;
   x->n = n;
   return (void *)x;
 }
+
 void *sym(char *s, int n) {
   Sym *x = malloc(sizeof(Sym));
   x->t = SYM;
   x->s = strndup(s, n);
   return (void *)x;
 }
-char type(void *v) { return *((char *)v); }
+
+char type(void *v) { return v ? *((char *)v) : NIL; }
 void *head(void *v) { return type(v) == PAIR ? ((Pair *)v)->a : 0; }
 void *tail(void *v) { return type(v) == PAIR ? ((Pair *)v)->b : 0; }
-void *setHead(void *v, void *h) { return ((Pair *)v)->a = h; }
-void *setTail(void *v, void *t) { return ((Pair *)v)->b = t; }
+void setHead(void *v, void *h) {
+  if (type(v) == PAIR)
+    ((Pair *)v)->a = h;
+}
+void setTail(void *v, void *t) {
+  if (type(v) == PAIR)
+    ((Pair *)v)->b = t;
+}
 
 void *parse(char **s) {
   char *p = *s, *q;
-  void *v = 0, *w, *z;
-  int n, sign;
+  void *v = 0, *z;
+  int n = 0, sign = 1;
+
   while (*p && *p <= ' ')
     p++;
   if (*p == '(') {
     p++;
-    w = cons(parse(&p), 0);
-    z = w;
+    v = cons(parse(&p), 0);
+    z = v;
     while (head(z)) {
-      z = setTail(z, cons(parse(&p), 0));
+      setTail(z, cons(parse(&p), 0));
+      z = tail(z);
     }
+    return v;
   } else if (*p == ')') {
     p++;
     return 0;
@@ -61,23 +71,22 @@ void *parse(char **s) {
       sign = -1;
       p++;
     }
-    for (q = p; *p >= '0' && *p <= '9'; p++) {
-      n = n * 10 + *p - '0';
-    }
+    for (q = p; *p >= '0' && *p <= '9'; p++)
+      n = n * 10 + (*p - '0');
     return num(n * sign);
   } else if (*p == '"') {
     p++;
-    for (q = p; *p && *p != '"'; p++)
-      ;
-    if (!*p)
+    for (q = p; *p && *p != '"';) {
+      p++;
+    }
+    if (!*p) {
       return 0;
+    }
     return cons(sym("quote", 5), cons(sym(q, p++ - q), 0));
   } else if (*p) {
     for (q = p; *p > ' ' && *p != ')' && *p != '('; p++)
       ;
-    if (p > q) {
-      return sym(q, p - q);
-    }
+    return p > q ? sym(q, p - q) : 0;
   }
   return v;
 }
@@ -85,7 +94,9 @@ void *parse(char **s) {
 void printValue(void *v) {
   if (!v) {
     print("()\n");
-  } else if (type(v) == PAIR) {
+    return;
+  }
+  if (type(v) == PAIR) {
     print("('");
     printValue(head(v));
     for (v = tail(v); head(v); v = tail(v)) {
@@ -98,9 +109,7 @@ void printValue(void *v) {
     }
     print(")");
   } else if (type(v) == NUM) {
-    char buf[12];
-    itoa(((Num *)v)->n, buf, 10);
-    print(buf);
+    printd(((Num *)v)->n);
   } else if (type(v) == SYM) {
     print(((Sym *)v)->s);
   }
@@ -113,10 +122,12 @@ void lang(void) {
   while (1) {
     print(": ");
     line = editline();
+    if (!line) {
+      break;
+    }
     print("\n");
     p = line;
-    if (strcmp(line, "exit") == 0) {
-      print("\n");
+    if (!strcmp(line, "exit")) {
       free(line);
       break;
     }

@@ -5,11 +5,25 @@
 /* print string */
 void print(const char *s) {
   char *p;
-  for (p = (char *)s; *p; p++) putchar(*p);
+  for (p = (char *)s; *p; p++) {
+    putchar(*p);
+  }
+}
+
+/* print decimal */
+void printd(int n) {
+  if (n < 0) {
+    putchar('-');
+    n = -n;
+  }
+  if (n / 10) {
+    printd(n / 10);
+  }
+  putchar((n % 10) + '0');
 }
 
 /* editable input line */
-char* editline(void) {
+char *editline(void) {
   int i = 0;
   int cap = 1024;
   char c;
