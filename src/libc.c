@@ -2,7 +2,6 @@
 #pragma once
 
 /* from libc_i86.asm */
-extern void print(const char *s);
 extern void putchar(int c);
 extern char getchar(void);
 extern void exit(int code);
