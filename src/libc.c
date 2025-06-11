@@ -7,13 +7,12 @@ extern void putchar(int c);
 extern char getchar(void);
 extern void exit(int code);
 extern void clear(void);
+extern void *_malloc_here;
+extern void *_malloc_max;
 
 typedef unsigned char byte_t;
 typedef unsigned long size_t;
 enum { stdin, stdout, stderr };
-
-static void *heap = (void *)0x10000;
-static const void *heapMax = (void *)0x9FBFF;
 
 int max(int a, int b) {
   return a > b ? a : b;
@@ -43,13 +42,13 @@ void* memcpy(void *dst, const void *src, size_t n) {
 void *malloc(size_t n) {
   void *r;
   n = (n + 3) & ~3;
-  if ((char*)heap + n + sizeof(size_t) >= (char*)heapMax) {
+  if ((char*)_malloc_here + n + sizeof(size_t) >= (char*)_malloc_max) {
     fputs("\n>_< full!\n", stderr);
     exit(1);
   }
-  r = heap;
+  r = _malloc_here;
   *((size_t *)r) = n;
-  heap = (char*)heap + n + sizeof(size_t);
+  _malloc_here = (char*)_malloc_here + n + sizeof(size_t);
   return (void *)((char *)r + sizeof(size_t));
 }
 

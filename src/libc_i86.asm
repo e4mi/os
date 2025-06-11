@@ -6,6 +6,8 @@ global putchar
 global exit
 global clear
 global getchar
+global _malloc_here
+global _malloc_max
 
 _bootloader:
 .stack:
@@ -27,6 +29,7 @@ _bootloader:
   jc .error
 .start:
   call main
+  jmp exit
 .error:
   mov si, .msg
   call _print
@@ -96,6 +99,9 @@ getchar:
 .done:
   pop bp
   ret
+
+_malloc_here dw 0x0000, 0x0001
+_malloc_max dw 0xFBFF, 0x0009
 
 _signature:
   times 510 - ($ - $$) db 0
