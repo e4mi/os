@@ -22,13 +22,22 @@ void printd(int n) {
   putchar((n % 10) + '0');
 }
 
+void *auto_alloc(void *ptr, size_t n) {
+  size_t m = malloc_usable_size(ptr);
+  if (m >= n) {
+    return ptr;
+  }
+  m = max(n + 1024, m * 2);
+  return realloc(ptr, n);
+}
+
+
 /* editable input line */
-char *editline(void) {
+void* editline(char* line) {
   int i = 0;
-  int cap = 1024;
   char c;
-  char *line = malloc(cap);
   for (;;) {
+    line = auto_alloc(line, i + 2);
     c = getchar();
     if (c == '\b' || c == 0x7F) {
       if (i > 0) {
@@ -37,10 +46,6 @@ char *editline(void) {
         putchar(' ');
         putchar('\b');
       }
-    }
-    if (i >= cap - 2) {
-      cap += 1024;
-      line = realloc(line, cap);
     }
     if (c >= ' ' && c <= '~') {
       line[i++] = c;
@@ -52,13 +57,4 @@ char *editline(void) {
     }
   }
   return line;
-}
-
-void *auto_alloc(void *ptr, size_t n) {
-  size_t m = malloc_usable_size(ptr);
-  if (m >= n) {
-    return ptr;
-  }
-  m = max(n + 1024, m * 2);
-  return realloc(ptr, n);
 }

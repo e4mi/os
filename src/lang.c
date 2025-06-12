@@ -180,14 +180,14 @@ void* eval(void *x, void **env) {
   }
 }
 
-void *prim_plus(void *arg) {
+void *prim_plus(void *arg, void **env) {
   int a, b;
   a = type(head(arg)) == NUM ? ((Num *)head(arg))->n : 0;
   b = type(head(tail(arg))) == NUM ? ((Num *)head(tail(arg)))->n : 0;
   return num(a + b);
 }
 
-void *prim_sum(void *arg) {
+void *prim_sum(void *arg, void **env) {
   int val = 0;
   void *v = arg;
   while (head(v)) {
@@ -197,7 +197,7 @@ void *prim_sum(void *arg) {
   return num(val);
 }
 
-void *prim_sub(void *arg) {
+void *prim_sub(void *arg, void **env) {
   int val = type(head(arg)) == NUM ? ((Num *)head(arg))->n : 0;
   void *v = tail(arg);
   while (head(v)) {
@@ -207,7 +207,7 @@ void *prim_sub(void *arg) {
   return num(val);
 }
 
-void *prim_mul(void *arg) {
+void *prim_mul(void *arg, void **env) {
   int val = 0;
   void *v = arg;
   while (head(v)) {
@@ -217,7 +217,7 @@ void *prim_mul(void *arg) {
   return num(val);
 }
 
-void *prim_div(void *arg) {
+void *prim_div(void *arg, void **env) {
   int val = type(head(arg)) == NUM ? ((Num *)head(arg))->n : 0;
   void *v = tail(arg);
   while (head(v)) {
@@ -231,7 +231,7 @@ void *prim_div(void *arg) {
 }
 
 void lang(void) {
-  char *line, *p;
+  char *line = 0, *p;
   void *x, *env = 0;
   env = cons(
     cons(sym("+", 1), prim((Fn)prim_sum)), cons(
@@ -241,20 +241,19 @@ void lang(void) {
   print("\n");
   while (1) {
     print(": ");
-    line = editline();
+    line = editline(line);
     if (!line) {
       break;
     }
     print("\n");
     p = line;
     if (!strcmp(line, "exit")) {
-      free(line);
       break;
     }
     x = parse(&p);
     x = eval(x, &env);
     printValue(x);
     print("\n");
-    free(line);
   }
+  free(line);
 }

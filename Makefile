@@ -1,6 +1,6 @@
 ID := os
 CC := gcc
-CFLAGS = -m16 -ffreestanding -fno-pic -Os -std=c89 -pedantic -Wall -Wextra
+CFLAGS = -m16 -ffreestanding -fno-pic -Os -std=c89 -pedantic -Wall
 LDFLAGS = -T linker.ld
 SIZE = $(shell expr 8 \* 1024)
 .PHONY: all clean docker run debug

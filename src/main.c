@@ -8,7 +8,9 @@ int main(void) {
   print("\n _^..^_ meow!\n\n");
   while (1) {
     print("> ");
-    line = editline();
+    line = editline(line);
+    print("\n");
+    print(line);
     print("\n");
     if (strcmp(line, "exit") == 0) {
       free(line);

@@ -12,7 +12,6 @@
       "-std=c89",
       "-pedantic",
       "-Wall",
-      "-Wextra",
       "-Wno-empty-translation-unit"
     ]
   },
