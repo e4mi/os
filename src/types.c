@@ -60,6 +60,15 @@ void *list_push(void **v, void *x) {
   return *v;
 }
 
+void *list_from(size_t size, void **items) {
+  size_t i;
+  List *x = list();
+  for (i = 0; i < size; i++) {
+    list_push((void **)&x, items[i]);
+  }
+  return x;
+}
+
 void printValue(void *v) {
   char *p;
   int i;
