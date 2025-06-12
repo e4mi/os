@@ -11,7 +11,7 @@ clean:
 docker:
 	docker build -t $(ID) .
 	docker run -it --rm -v ./:/src -w /src $(ID)
-main.o: src/main.c src/lang.c src/libc.c src/nice.c
+main.o: src/main.c src/dev.c src/libc.c src/nice.c
 	$(CC) $(CFLAGS) -c src/main.c -o main.o
 libc_i86.o: src/libc_i86.asm
 	nasm -D SIZE=$(SIZE) -f elf32 src/libc_i86.asm -o libc_i86.o

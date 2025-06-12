@@ -23,38 +23,38 @@ void printd(int n) {
 }
 
 /* auto-growing allocator */
-void* auto_alloc(void *ptr, size_t needed_size) {
+void *auto_alloc(void **ptr, size_t needed_size) {
   size_t new_size;
-  size_t current_size = ptr ? malloc_usable_size(ptr) : 0;
-  if (current_size >= needed_size) return ptr;
+  size_t current_size = *ptr ? malloc_usable_size(*ptr) : 0;
+  if (current_size >= needed_size) return *ptr;
   new_size = (needed_size + 64 - 1) & ~(64 - 1);
-  return realloc(ptr, new_size);
+  *ptr = realloc(*ptr, new_size);
+  return *ptr;
 }
 
-
 /* editable input line */
-void* edit_line(char* line) {
+char* edit_line(char** line) {
   int i = 0;
   char c;
   for (;;) {
-    line = auto_alloc(line, i + 2);
+    auto_alloc((void**)line, i + 2);
     c = getchar();
     if (c == '\b' || c == 0x7F) {
       if (i > 0) {
-        line[i--] = 0;
+        (*line)[i--] = 0;
         putchar('\b');
         putchar(' ');
         putchar('\b');
       }
     }
     if (c >= ' ' && c <= '~') {
-      line[i++] = c;
+      (*line)[i++] = c;
       putchar(c);
     }
     if (c == '\n' || c == 0) {
-      line[i] = 0;
+      (*line)[i] = 0;
       break;
     }
   }
-  return line;
+  return *line;
 }

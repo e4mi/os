@@ -13,23 +13,6 @@ typedef unsigned char byte_t;
 typedef unsigned long size_t;
 enum { stdin, stdout, stderr };
 
-int max(int a, int b) {
-  return a > b ? a : b;
-}
-
-int min(int a, int b) {
-  return a < b ? a : b;
-}
-
-void fputs(const char *s, ...) {
-  while (*s) putchar(*s++);
-}
-
-void puts(const char *s) {
-  while (*s) putchar(*s++);
-  putchar('\n');
-}
-
 void* memcpy(void *dst, const void *src, size_t n) {
   size_t i;
   for (i = 0; i < n; i++) {
@@ -40,9 +23,10 @@ void* memcpy(void *dst, const void *src, size_t n) {
 
 void *malloc(size_t n) {
   void *r;
+  char *err = "\n>_< full!\n";
   n = (n + 3) & ~3;
   if ((char*)_malloc_here + n + sizeof(size_t) >= (char*)_malloc_max) {
-    fputs("\n>_< full!\n", stderr);
+    while (*err) { putchar(*err++); }
     exit(1);
   }
   r = _malloc_here;
@@ -74,26 +58,6 @@ void *realloc(void *ptr, size_t n) {
   memcpy(r, ptr, m);
   free(ptr);
   return r;
-}
-
-size_t readline(char *buf, size_t size) {
-  size_t i = 0;
-  char c;
-  while ((c = getchar()) && c != '\n' && i < size - 1) {
-    if ((c == '\b' || c == 0x7F)) {
-      if (i > 0) {
-        i--;
-        putchar('\b');
-        putchar(' ');
-        putchar('\b');
-      }
-    } else if (c >= ' ' && c <= '~') {
-      buf[i++] = c;
-      putchar(c);
-    }
-  }
-  buf[i] = 0;
-  return i;
 }
 
 char* strndup(const char *s, size_t n) {

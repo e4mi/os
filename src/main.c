@@ -1,6 +1,6 @@
 #include "./libc.c"
 #include "./nice.c"
-#include "./lang.c"
+#include "./dev.c"
 
 int main(void) {
   char *line = 0;
@@ -8,14 +8,14 @@ int main(void) {
   print("\n _^..^_ meow!\n\n");
   while (1) {
     print("> ");
-    line = edit_line(line);
+    edit_line(&line);
     print("\n");
     if (strcmp(line, "exit") == 0) {
       break;
     } else if (strcmp(line, "help") == 0) {
-      print("lang, exit, help\n");
-    } else if (strcmp(line, "lang") == 0) {
-      lang();
+      print("dev, exit, help\n");
+    } else if (strcmp(line, "dev") == 0) {
+      dev();
     } else {
       print(">_< ");
       print(line);
