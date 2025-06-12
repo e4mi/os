@@ -1,5 +1,5 @@
-#include "./libc.c"
-#include "./nice.c"
+#include "./lib.c"
+#include "./types.c"
 #include "./dev.c"
 
 int main(void) {

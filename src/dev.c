@@ -1,7 +1,7 @@
-/* Custom Lisp-like language without cons */
+/* programming language (WIP) */
 #pragma once
-#include "./libc.c"
-#include "./nice.c"
+#include "./lib.c"
+#include "./types.c"
 
 /* clang-format off */
 typedef void*(*NFn)(void*, void**);
@@ -12,7 +12,6 @@ typedef struct { char t; NFn f; } NPrim;
 typedef struct { char t; size_t l; void **i; } NArray;
 /* clang-format on */
 
-static const char NIL = 0;
 static const char NUM = 2;
 static const char SYM = 3;
 static const char STR = 4;
@@ -61,8 +60,6 @@ void array_push(void **v, void *x) {
   auto_alloc(v, sizeof(NArray) + ((*a)->l + 1) * sizeof(void *));
   (*a)->i[(*a)->l++] = x;
 }
-
-char type(void *v) { return v ? *((char *)v) : NIL; }
 
 NSym *intern(char *s, int len) {
   int i;
@@ -139,7 +136,7 @@ void *parse(char **p) {
   return v;
 }
 
-void printValue(void *v) {
+void devPrint(void *v) {
   char *p;
   int i;
   if (!v) {
@@ -152,7 +149,7 @@ void printValue(void *v) {
       if (i > 0) {
         print(" ");
       }
-      printValue(((NArray *)v)->i[i]);
+      devPrint(((NArray *)v)->i[i]);
     }
     print(")");
   } else if (type(v) == NUM) {
@@ -222,7 +219,7 @@ void dev(void) {
     }
     x = parse(&p);
     x = eval(x, (void*)&env);
-    printValue(x);
+    devPrint(x);
     print("\n");
   }
   free(line);
