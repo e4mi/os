@@ -22,18 +22,18 @@ void printd(int n) {
   putchar((n % 10) + '0');
 }
 
-void *auto_alloc(void *ptr, size_t n) {
-  size_t m = malloc_usable_size(ptr);
-  if (m >= n) {
-    return ptr;
-  }
-  m = max(n + 1024, m * 2);
-  return realloc(ptr, n);
+/* auto-growing allocator */
+void* auto_alloc(void *ptr, size_t needed_size) {
+  size_t new_size;
+  size_t current_size = ptr ? malloc_usable_size(ptr) : 0;
+  if (current_size >= needed_size) return ptr;
+  new_size = (needed_size + 64 - 1) & ~(64 - 1);
+  return realloc(ptr, new_size);
 }
 
 
 /* editable input line */
-void* editline(char* line) {
+void* edit_line(char* line) {
   int i = 0;
   char c;
   for (;;) {

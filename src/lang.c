@@ -241,7 +241,7 @@ void lang(void) {
   print("\n");
   while (1) {
     print(": ");
-    line = editline(line);
+    line = edit_line(line);
     if (!line) {
       break;
     }
