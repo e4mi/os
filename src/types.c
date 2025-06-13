@@ -1,7 +1,7 @@
 #pragma once
 #include "./lib.c"
 
-enum Type { NIL, NUMBER, TEXT, FUNC, LIST };
+enum Type { NIL, NUMBER, TEXT, FUNC, PAIR, LIST, MAP };
 
 typedef void *(*FuncRef)(void*, void **);
 
@@ -31,6 +31,18 @@ typedef struct {
   void **items;
 } List;
 
+typedef struct {
+  char type;
+  void *key;
+  void *value;
+} Pair;
+
+typedef struct {
+  char type;
+  size_t size;
+  Pair **items;
+} Map;
+
 char type(void *v) { return v ? *((char *)v) : NIL; }
 
 void *number(int value) {
@@ -46,6 +58,11 @@ void *text(char *value, int len) {
 void *func(FuncRef function) {
   Func *x = malloc(sizeof(Func));
   return x->type = FUNC, x->function = function, x;
+}
+
+void *pair(void *key, void *value) {
+  Pair *x = malloc(sizeof(Pair));
+  return x->type = PAIR, x->key = key, x->value = value, x;
 }
 
 void *list(void) {
@@ -67,6 +84,43 @@ void *list_from(size_t size, void **items) {
     list_push((void **)&x, items[i]);
   }
   return x;
+}
+
+void *map(void) {
+  Map *x = auto_alloc(0, sizeof(Map));
+  return x->type = MAP, x->size = 0, x->items = 0, x;
+}
+
+long map_find_index(void **v, void *key) {
+  Map **a = (Map **)v;
+  long i;
+  for (i = 0; i < (*a)->size; i++) {
+    if ((*a)->items[i]->key == key) {
+      return i;
+    }
+  }
+  return -1;
+}
+
+void *map_set(void **v, void *key, void *value) {
+  Map **a = (Map **)v;
+  long i = map_find_index(v, key);
+  if (i >= 0) {
+    return (*a)->items[i]->value = value;
+  } else {
+    auto_alloc(v, sizeof(Map) + ((*a)->size + 1) * sizeof(Pair *));
+    (*a)->items[(*a)->size++] = pair(key, value);
+  }
+  return *v;
+}
+
+void *map_get(void **v, void *key) {
+  Map **a = (Map **)v;
+  long i = map_find_index(v, key);
+  if (i >= 0) {
+    return (*a)->items[i]->value;
+  }
+  return 0;
 }
 
 void printValue(void *v) {
