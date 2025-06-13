@@ -3,7 +3,7 @@
 
 enum Type { NIL, NUMBER, TEXT, FUNC, LIST };
 
-typedef void *(*FuncRef)(void **);
+typedef void *(*FuncRef)(void*, void **);
 
 typedef struct {
   char type;
@@ -16,7 +16,7 @@ typedef struct {
 
 typedef struct {
   char type;
-  size_t length;
+  size_t size;
   char *value;
 } Text;
 
@@ -43,7 +43,7 @@ void *text(char *value, int len) {
   return x->type = TEXT, x->value = value, x;
 }
 
-void *fn(FuncRef function) {
+void *func(FuncRef function) {
   Func *x = malloc(sizeof(Func));
   return x->type = FUNC, x->function = function, x;
 }
