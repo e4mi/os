@@ -86,9 +86,9 @@ void *list_from(size_t size, void **items) {
   return x;
 }
 
-void *map(void) {
+void *map(int size, Pair **items) {
   Map *x = auto_alloc(0, sizeof(Map));
-  return x->type = MAP, x->size = 0, x->items = 0, x;
+  return x->type = MAP, x->size = size, x->items = items, x;
 }
 
 long map_find_index(void **v, void *key) {
