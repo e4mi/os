@@ -20,17 +20,6 @@ Text *intern(char *value, int len) {
   return word;
 }
 
-/* address of symbol in environment or 0 */
-void *lookup(Text *value) {
-  int i;
-  for (i = 0; i < env->size; i += 2) {
-    if (value == (Text *)env->items[i]) {
-      return env->items[i + 1];
-    }
-  }
-  return 0;
-}
-
 void *parse(char **p) {
   char *q;
   void *v = 0, *z;
@@ -99,7 +88,7 @@ void* eval(void *x, void **env) {
       return 0;
     }
   } else if (type(x) == TEXT) {
-    return lookup((Text *)x);
+    return map_get((void **)&env, (Text *)x);
   } else {
     return x;
   }
@@ -112,10 +101,11 @@ void *prim_meow(void *arg, void **env) {
 void dev(void) {
   char *line = 0, *p;
   void *x;
-  env = list();
+  Pair **envPairs = {
+    pair(intern("meow", 4), func((FuncRef)prim_meow)),
+  };
+  env = map(1, envPairs);
   words = list();
-  list_push((void**)&env, intern("+", 1));
-  list_push((void**)&env, func((FuncRef)prim_meow));
 
   print("\n");
   while (1) {
@@ -130,7 +120,7 @@ void dev(void) {
       break;
     }
     x = parse(&p);
-    x = eval(x, (void*)&env);
+    x = eval(x, (void**)&env);
     printValue(x);
     print("\n");
   }
