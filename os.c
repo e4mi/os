@@ -225,6 +225,22 @@ ref parse(char **s) {
   return 0;
 }
 
+ref lookup(char *x, ref env) {
+  char *a, *b;
+  while (env) {
+    a = x;
+    b = (char*) head(head(env));
+    while (*a && *a == *b) {
+      a++, b++;
+    }
+    if (!*a && !*b) {
+      return head(env);
+    }
+    env = tail(env);
+  }
+  return 0;
+}
+
 ref eval(ref x, ref env) {
   ref op, args, last;
   if (!x) {
@@ -245,7 +261,9 @@ ref eval(ref x, ref env) {
       return 0;
     }
   }
-  /* TODO */
+  if (head(x) == TXT) {
+    return lookup((char *)tail(x), env);
+  }
   return x;
 }
 
@@ -257,16 +275,9 @@ ref meow(ref args, ref env) {
 int main(void) {
   char *line = 0, *cursor;
   ref env = 0, x = 0, last = 0;
-  /*   push(&env, mk(mk(TXT, (ref) "meow"), mk(FN, (ref)meow)), &last);*/
-  push(&env, mk(TXT, (ref) "a"), &last);
-  push(&env, mk(TXT, (ref) "b"), &last);
-  push(&env, mk(TXT, (ref) "c"), &last);
+  push(&env, mk(mk(TXT, (ref) "meow"), mk(FN, (ref)meow)), &last);
   clear();
   print("\n _^..^_ meow!\n\n");
-  print_cell(mk(NUM, 42));
-  print("\n");
-  print_cell(mk(TXT, (ref) "meow"));
-  print("\n");
   print_cell(env);
   print("\n");
   while (1) {
@@ -279,6 +290,9 @@ int main(void) {
     print("\n");
     cursor = line;
     x = parse(&cursor);
+    print_cell(x);
+    print("\n");
+    x = eval(x, env);
     print_cell(x);
     print("\n");
   }
