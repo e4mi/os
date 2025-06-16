@@ -14,28 +14,10 @@ void print(char *s) {
     putchar(*s++);
 }
 
-void *memcpy(void *dst, const void *src, size_t n) {
-  size_t i;
-  for (i = 0; i < n; i++)
-    ((char *)dst)[i] = ((char *)src)[i];
-  return 0;
-}
-
-int strncmp(const char *s1, const char *s2, size_t n) {
-  while (n-- > 0 && *s1 && *s1 == *s2)
+int same(const char *s1, const char *s2) {
+  while (*s1 && *s1 == *s2)
     s1++, s2++;
-  return *s1 - *s2;
-}
-
-size_t strlen(const char *s) {
-  int i = 0;
-  while (s[i])
-    i++;
-  return i;
-}
-
-int strcmp(const char *s1, const char *s2) {
-  return strncmp(s1, s2, strlen(s1));
+  return *s1 == *s2;
 }
 
 void *malloc(size_t n) {
@@ -52,11 +34,11 @@ void *malloc(size_t n) {
 
 size_t malloc_usable_size(void *ptr) { return ((size_t *)ptr)[-1]; }
 
-void free(void *ptr) { (void)ptr; }
+void free(void *ptr) { (void)ptr; /* TODO */ }
 
 void *realloc(void *ptr, size_t n) {
   void *r;
-  size_t m;
+  size_t i, m;
   if (!ptr)
     return malloc(n);
   m = malloc_usable_size(ptr);
@@ -64,18 +46,24 @@ void *realloc(void *ptr, size_t n) {
     return ptr;
   n += 1024;
   r = malloc(n);
-  memcpy(r, ptr, m);
+  for (i = 0; i < m; i++)
+    ((char *)r)[i] = ((char *)ptr)[i];
   free(ptr);
   return r;
 }
 
 ref get(ref x, int i) { return ((ref *)x)[i]; }
+ref set(ref x, int i, ref y) { return ((ref *)x)[i] = y, x; }
 
 ref mk(ref a, ref b) {
   ref *x = (ref *)malloc(sizeof(ref) * 2);
   x[0] = a;
   x[1] = b;
   return (ref)x;
+}
+
+ref push(ref *list, ref x, ref *last) {
+  return *last = get(*list, 0) ? set(*last, 1, mk(x, 0)) : (*list = mk(x, 0)), *list;
 }
 
 void print_hex(char *x, int n) {
@@ -116,8 +104,7 @@ void print_cell(ref x) {
   }
 }
 
-/* editable input line */
-char *readline(char **line) {
+char *edit_line(char **line) {
   int i = 0;
   int size = 0;
   char c;
@@ -146,8 +133,15 @@ char *readline(char **line) {
   return *line;
 }
 
+ref meow(ref args, ref env) {
+  print("meow\n");
+  return mk(TXT, (ref) "meow");
+}
+
 int main(void) {
   char *line = 0;
+  ref env = 0, x = 0, last = 0;
+  push(&env, mk(mk(TXT, (ref) "meow"), mk(FN, (ref)meow)), &last);
   clear();
   print("\n _^..^_ meow!\n\n");
   print_cell(mk(NUM, 42));
@@ -156,9 +150,9 @@ int main(void) {
   print("\n");
   while (1) {
     print("> ");
-    readline(&line);
+    edit_line(&line);
     print("\n");
-    if (strcmp(line, "exit") == 0)
+    if (same(line, "exit"))
       break;
     else
       print_cell(mk(TXT, (ref) line));
