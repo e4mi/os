@@ -6,7 +6,7 @@ extern void *_malloc_here;
 extern const void *_malloc_max;
 
 typedef unsigned long size_t;
-typedef __SIZE_TYPE__ Ref;
+typedef __SIZE_TYPE__ ref;
 enum { NIL = 0, TXT = 1, NUM = 3, FN = 5 };
 
 void print(char *s) {
@@ -26,12 +26,14 @@ int strncmp(const char *s1, const char *s2, size_t n) {
     s1++, s2++;
   return *s1 - *s2;
 }
+
 size_t strlen(const char *s) {
   int i = 0;
   while (s[i])
     i++;
   return i;
 }
+
 int strcmp(const char *s1, const char *s2) {
   return strncmp(s1, s2, strlen(s1));
 }
@@ -54,24 +56,26 @@ void free(void *ptr) { (void)ptr; }
 
 void *realloc(void *ptr, size_t n) {
   void *r;
-  size_t m = malloc_usable_size(ptr);
+  size_t m;
+  if (!ptr)
+    return malloc(n);
+  m = malloc_usable_size(ptr);
   if (m >= n)
     return ptr;
   n += 1024;
-  if (!ptr)
-    return malloc(n);
   r = malloc(n);
   memcpy(r, ptr, m);
   free(ptr);
   return r;
 }
 
-Ref get(Ref x, int i) { return ((Ref *)x)[i]; }
-Ref mk(Ref a, Ref b) {
-  Ref *x = (Ref *)malloc(sizeof(Ref) * 2);
+ref get(ref x, int i) { return ((ref *)x)[i]; }
+
+ref mk(ref a, ref b) {
+  ref *x = (ref *)malloc(sizeof(ref) * 2);
   x[0] = a;
   x[1] = b;
-  return (Ref)x;
+  return (ref)x;
 }
 
 void print_hex(char *x, int n) {
@@ -89,7 +93,7 @@ void print_dec(int x) {
   putchar(x % 10 + '0');
 }
 
-void print_cell(Ref x) {
+void print_cell(ref x) {
   int t;
   char *s;
   if (!x) {
@@ -108,7 +112,7 @@ void print_cell(Ref x) {
   } else if (t == NUM) {
     print_dec(get(x, 1));
   } else {
-    print("#"), print_hex((char *)x, sizeof(Ref)*2);
+    print("#"), print_hex((char *)x, sizeof(ref)*2);
   }
 }
 
@@ -141,13 +145,14 @@ char *readline(char **line) {
   }
   return *line;
 }
+
 int main(void) {
   char *line = 0;
   clear();
   print("\n _^..^_ meow!\n\n");
   print_cell(mk(NUM, 42));
   print("\n");
-  print_cell(mk(TXT, (Ref) "meow"));
+  print_cell(mk(TXT, (ref) "meow"));
   print("\n");
   while (1) {
     print("> ");
@@ -156,7 +161,7 @@ int main(void) {
     if (strcmp(line, "exit") == 0)
       break;
     else
-      print_cell(mk(TXT, (Ref) line));
+      print_cell(mk(TXT, (ref) line));
     print("\n");
   }
   print("byeeeee...\n");
