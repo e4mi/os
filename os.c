@@ -1,5 +1,14 @@
 /*--- LIBC ---*/
-typedef unsigned long size_t;
+#if defined(__x86_32__)
+  typedef unsigned int size_t;
+  typedef unsigned int uintptr_t;
+#elif defined(__x86_64__)
+  typedef unsigned long size_t;
+  typedef unsigned long uintptr_t;
+#else
+  typedef unsigned long size_t;
+  typedef unsigned int uintptr_t;
+#endif
 
 /* from os_ARCH.asm */
 extern void *_malloc_here;
@@ -43,8 +52,8 @@ void *malloc(size_t n) {
     print("\n>_< full!\n");
     exit(1);
   }
-  r = (void *)((size_t)_malloc_here + sizeof(size_t));
-  _malloc_here = (void *)((size_t)_malloc_here + n + sizeof(size_t));
+  r = (void *)((uintptr_t)_malloc_here + sizeof(size_t));
+  _malloc_here = (void *)((uintptr_t)_malloc_here + n + sizeof(size_t));
   return r;
 }
 
@@ -124,18 +133,19 @@ char *readline(char **line) {
 }
 
 /* --- LANGUAGE --- */
-const size_t NIL = 0x0, TXT = 0x1, NUM = 0x3, FN = 0x5;
-char is_pair(void *x) { return ((size_t)x & 1) == 0; }
+typedef void *(*Fn)(void **, void **);
+const uintptr_t NIL = 0x0, TXT = 0x1, NUM = 0x3, FN = 0x5;
+char is_pair(void *x) { return ((uintptr_t)x & 1) == 0; }
 
-static void *cell(void *a, void *b) {
+static void **cell(void *a, void *b) {
   void **x = malloc(sizeof(void *) * 2);
   x[0] = a;
   x[1] = b;
-  return x;
+  return *x;
 }
 void *head(void *x) { return ((void **)x)[0]; }
 void *tail(void *x) { return ((void **)x)[1]; }
-size_t raw(void *x) { return (size_t)((void **)x)[1]; }
+uintptr_t raw(void *x) { return (uintptr_t)((void **)x)[1]; }
 void *pair(void *a, void *b) { return cell(a, b); }
 void *txt(char *s) { return cell((void *)TXT, strndup(s, strlen(s))); }
 void *txtn(char *s, size_t n) { return cell((void *)TXT, strndup(s, n)); }
@@ -144,8 +154,8 @@ void *num(int i) {
   *x = i;
   return cell((void *)NUM, x);
 }
-void *fn(void *(*f)(void **, void **)) { return cell((void *)FN, (void *)f); }
-char type(void *x) { return (!x || is_pair(x)) ? NIL : (size_t)head(x); }
+void *fn(Fn f) { return cell((void *)FN, (void *)f); }
+uintptr_t type(void *x) { return (!x || is_pair(x)) ? NIL : (uintptr_t)x; }
 
 void push(void **z, void *x, void **last) {
   *last = *z ? last[1] = cell(x, 0) : (*z = cell(x, 0));
@@ -161,30 +171,24 @@ void free_cell(void *x) {
 
 void print_cell(void *x) {
   char *s;
-  if (!x) {
-    print("nil");
-    return;
-  }
   if (is_pair(x)) {
-    if (!head(x)) {
+    if (!x || !head(x)) {
       print("nil");
       return;
     }
     putchar('(');
-    print_cell(head(x));
-    while (is_pair(x = tail(x))) {
-      putchar(' ');
+    while (is_pair(x)) {
       print_cell(head(x));
-    }
-    if (!is_pair(x)) {
-      print(" . ");
-      print_cell(x);
+      if (tail(x)) {
+        putchar(' ');
+      }
+      x = tail(x);
     }
     putchar(')');
   } else {
     char t = type(x);
     if (t == TXT) {
-      for (s = ((char **)x)[1]; *s; s++) {
+      for (s = tail(x); *s; s++) {
         if (*s == '"' || *s == '\\') {
           putchar('\\');
         }
@@ -192,7 +196,7 @@ void print_cell(void *x) {
       }
     } else {
       print("#");
-      print_hex(x, sizeof(void *));
+      print_hex(x, sizeof(void*)*2);
     }
   }
 }
@@ -270,11 +274,15 @@ void *meow(void **x, void **env) { return print("meow\n"), txt("meow"); }
 
 /*--- MAIN ---*/
 int main(void) {
-  void *x = 0, *env = 0, *last;
-  char *line = 0;
-  push(&env, pair(txt("meow"), fn(meow)), &last);
+  void *x = 0, *env = 0, *last = 0;
+  char *line = 0, *s;
+  push(&env, pair(txt("meow"), fn((Fn)meow)), &last);
   clear();
   print("\n _^..^_ meow!\n\n");
+  print_cell(num(42));
+  print("\n");
+  print_cell(txt("meow"));
+  print("\n");
   while (1) {
     print("> ");
     readline(&line);
@@ -282,8 +290,8 @@ int main(void) {
     if (strcmp(line, "exit") == 0) {
       break;
     } else {
-      x = parse(&line);
-      x = eval(x, env);
+      s = line;
+      x = parse(&s);
       print_cell(x);
       print("\n");
     }
