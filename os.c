@@ -1,50 +1,21 @@
-/*--- LIBC ---*/
-#if defined(__x86_32__)
-  typedef unsigned int size_t;
-  typedef unsigned int uintptr_t;
-#elif defined(__x86_64__)
-  typedef unsigned long size_t;
-  typedef unsigned long uintptr_t;
-#else
-  typedef unsigned long size_t;
-  typedef unsigned int uintptr_t;
-#endif
-
-/* from os_ARCH.asm */
-extern void *_malloc_here;
-extern const void *_malloc_max;
 extern void putchar(int c);
-extern void exit(int code);
 extern void clear(void);
 extern char getchar(void);
+extern void exit(int code);
+extern void *_malloc_here;
+extern const void *_malloc_max;
+typedef unsigned long size_t;
+#if defined(__x86_64__)
+typedef unsigned long uintptr_t;
+#else
+typedef unsigned int uintptr_t;
+#endif
 
-/* print string */
-extern void print(const char *s) {
+void print(char *s) {
   while (*s) {
     putchar(*s++);
   }
 }
-
-/* print bytes as hex numbers */
-void print_hex(void *x, int n) {
-  char c;
-  while (n--) {
-    c = ((char *)x)[n - 1];
-    putchar((c >> 4 & 0xf) + '0' + ((c >> 4 & 0xf) > 9) * 7);
-    putchar((c & 0xf) + '0' + ((c & 0xf) > 9) * 7);
-  }
-}
-
-/* copy memory */
-void *memcpy(void *dst, const void *src, size_t n) {
-  size_t i;
-  for (i = 0; i < n; i++) {
-    ((char *)dst)[i] = ((char *)src)[i];
-  }
-  return 0;
-}
-
-/* allocate memory */
 void *malloc(size_t n) {
   void *r;
   n = (n + 3) & ~3;
@@ -52,251 +23,102 @@ void *malloc(size_t n) {
     print("\n>_< full!\n");
     exit(1);
   }
-  r = (void *)((uintptr_t)_malloc_here + sizeof(size_t));
-  _malloc_here = (void *)((uintptr_t)_malloc_here + n + sizeof(size_t));
+  r = (void *)((size_t)_malloc_here + sizeof(size_t));
+  _malloc_here = (void *)((size_t)_malloc_here + n + sizeof(size_t));
   return r;
 }
-
-/* get size of allocated memory */
-size_t malloc_usable_size(void *ptr) { return ((size_t *)ptr)[-1]; }
-
-/* TODO: free memory */
-void free(void *ptr) { (void)ptr; }
-
-/* reallocate memory */
-void *realloc(void *ptr, size_t n) {
-  void *r;
-  size_t m = malloc_usable_size(ptr);
-  if (m >= n) {
-    return ptr;
-  }
-  n += 1024;
-  if (!ptr) {
-    return malloc(n);
-  }
-  r = malloc(n);
-  memcpy(r, ptr, m);
-  free(ptr);
-  return r;
-}
-
-size_t strlen(const char *s) {
-  size_t i = 0;
-  while (s[i]) {
-    i++;
-  }
-  return i;
-}
-/* compare strings up to n chars, returns 0 if equal */
-int strncmp(const char *s1, const char *s2, size_t n) {
-  while (n-- > 0 && *s1 && *s1 == *s2)
-    s1++, s2++;
-  return *s1 - *s2;
-}
-int strcmp(const char *s1, const char *s2) {
-  return strncmp(s1, s2, strlen(s1));
-}
-char *strndup(const char *s, size_t n) {
-  char *r = malloc(n + 1);
-  memcpy(r, s, n);
-  r[n] = 0;
-  return r;
-}
-/* editable input line */
-char *readline(char **line) {
-  int i = 0;
-  int size = 0;
-  char c;
-  for (;;) {
-    if (i + 2 >= size) {
-      realloc(*line, size += 128);
-    }
-    c = getchar();
-    if (c == '\b' || c == 0x7F) {
-      if (i > 0) {
-        (*line)[i--] = 0;
-        putchar('\b');
-        putchar(' ');
-        putchar('\b');
-      }
-    }
-    if (c >= ' ' && c <= '~') {
-      (*line)[i++] = c;
-      putchar(c);
-    }
-    if (c == '\n' || c == 0) {
-      (*line)[i] = 0;
-      break;
-    }
-  }
-  return *line;
-}
-
-/* --- LANGUAGE --- */
-typedef void *(*Fn)(void **, void **);
-const uintptr_t NIL = 0x0, TXT = 0x1, NUM = 0x3, FN = 0x5;
-char is_pair(void *x) { return ((uintptr_t)x & 1) == 0; }
-
-static void **cell(void *a, void *b) {
-  void **x = malloc(sizeof(void *) * 2);
-  x[0] = a;
-  x[1] = b;
-  return *x;
-}
-void *head(void *x) { return ((void **)x)[0]; }
-void *tail(void *x) { return ((void **)x)[1]; }
-uintptr_t raw(void *x) { return (uintptr_t)((void **)x)[1]; }
-void *pair(void *a, void *b) { return cell(a, b); }
-void *txt(char *s) { return cell((void *)TXT, strndup(s, strlen(s))); }
-void *txtn(char *s, size_t n) { return cell((void *)TXT, strndup(s, n)); }
-void *num(int i) {
-  int *x = malloc(sizeof(int));
-  *x = i;
-  return cell((void *)NUM, x);
-}
-void *fn(Fn f) { return cell((void *)FN, (void *)f); }
-uintptr_t type(void *x) { return (!x || is_pair(x)) ? NIL : (uintptr_t)x; }
-
-void push(void **z, void *x, void **last) {
-  *last = *z ? last[1] = cell(x, 0) : (*z = cell(x, 0));
-}
-
-void free_cell(void *x) {
-  if (!x)
-    return;
-  if (type(x) & (TXT | NUM))
-    free(((void **)x)[1]);
-  free(x);
-}
-
-void print_cell(void *x) {
+typedef struct {
+  char type;
+} Value;
+typedef struct {
+  char type;
+  void *a, *b;
+} Pair;
+typedef struct {
+  char type;
+  int n;
+} Num;
+typedef struct {
+  uintptr_t t;
   char *s;
-  if (is_pair(x)) {
-    if (!x || !head(x)) {
-      print("nil");
-      return;
+} Txt;
+typedef struct {
+  uintptr_t t;
+  void *(*f)(void **, void **);
+} Fn;
+
+enum { NIL = 0, TXT = 1, NUM = 3, FN = 5 };
+typedef uintptr_t Ref;
+typedef Ref Cell[2];
+Ref get(Ref x, int i) { return (Ref)((void **)x)[i]; }
+Ref set(Ref x, Ref a, Ref b) { return ((Ref *)x)[0] = a, ((Ref *)x)[1] = b, x; }
+char type(Ref x) { return (get(x, 0) & 1) ? get(x, 0) : NIL; }
+Ref mk(Ref a, Ref b) { return set((Ref)malloc(sizeof(Ref) * 2), a, b); }
+void print_hex(char *x, int n) {
+  int i = 0;
+  char *a = "0123456789abcdef";
+  for (i = 0; i < n; i++) {
+    putchar(a[x[i] >> 4 & 0xf]);
+    putchar(a[x[i] & 0xf]);
+  }
+}
+void print_dec(int x) {
+  if (x < 0) {
+    putchar('-');
+    x = -x;
+  }
+  if (x / 10) {
+    print_dec(x / 10);
+  }
+  putchar(x % 10 + '0');
+}
+void print_cell(Ref x) {
+  char *s;
+  if (!x) {
+    print("nil");
+    return;
+  } else if (type(x) == NIL) {
+    print("(");
+    print_cell(get(x, 0));
+    while (!type(x = get(x, 1))) {
+      putchar(' ');
+      print_cell(get(x, 0));
     }
-    putchar('(');
-    while (is_pair(x)) {
-      print_cell(head(x));
-      if (tail(x)) {
-        putchar(' ');
-      }
-      x = tail(x);
+    if (!type(x)) {
+      print(" . ");
+      print_cell(x);
     }
     putchar(')');
   } else {
-    char t = type(x);
+    int t = type(x);
+    print("\n");
     if (t == TXT) {
-      for (s = tail(x); *s; s++) {
+      print("\"");
+      for (s = (char *)get(x, 1); *s; s++) {
         if (*s == '"' || *s == '\\') {
           putchar('\\');
         }
         putchar(*s);
       }
+      print("\"");
+    } else if (t == NUM) {
+      print_dec(get(x, 1));
     } else {
       print("#");
-      print_hex(x, sizeof(void*)*2);
+      print_hex((char *)x, sizeof(Ref));
+      print(" #");
+      print_hex((char*)x + sizeof(Ref), sizeof(Ref));
     }
   }
 }
 
-void *parse(char **s) {
-  char *t;
-  int n = 0, sign = 1;
-  while (**s == ' ' || **s == '\t') {
-    (*s)++;
-  }
-  if (**s == '-' || (**s >= '0' && **s <= '9')) {
-    if (**s == '-') {
-      sign = -1;
-      (*s)++;
-    }
-    while (**s >= '0' && **s <= '9') {
-      n = n * 10 + (**s - '0');
-      (*s)++;
-    }
-    return num(n * sign);
-  }
-  if (**s >= ' ' && **s <= '~' && **s != '(' && **s != ')') {
-    t = *s;
-    while (**s >= ' ' && **s <= '~' && **s != '(' && **s != ')') {
-      (*s)++;
-    }
-    return txtn(t, *s - t);
-  } else if (**s == '"') {
-    (*s)++;
-    t = *s;
-    while (**s && **s != '"') {
-      if (**s == '\\') {
-        (*s)++;
-      }
-      (*s)++;
-    }
-    if (**s == '"') {
-      (*s)++;
-      return txtn(t, *s - t - (size_t)1);
-    }
-  }
-  return 0;
-}
-
-void *eval(void *x, void **env) {
-  void *op, *args, *last;
-  if (!x) {
-    return 0;
-  } else if (is_pair(x)) {
-    op = eval(head(x), env);
-    args = 0;
-    while (head(x)) {
-      push(&args, eval(head(x), env), &last);
-    }
-    if (type(op) == FN) {
-      return ((void *(*)(void **, void **))op)(args, env);
-    } else {
-      return 0;
-    }
-  } else if (type(x) == TXT) {
-    while (env) {
-      if (strncmp(tail(x), tail(head(head(env))), strlen(x)) == 0) {
-        return tail(head(env));
-      }
-      env = tail(env);
-    }
-    return 0;
-  } else {
-    return x;
-  }
-}
-
-/*--- ENV ---*/
-void *meow(void **x, void **env) { return print("meow\n"), txt("meow"); }
-
-/*--- MAIN ---*/
 int main(void) {
-  void *x = 0, *env = 0, *last = 0;
-  char *line = 0, *s;
-  push(&env, pair(txt("meow"), fn((Fn)meow)), &last);
+  Ref x = 0;
   clear();
   print("\n _^..^_ meow!\n\n");
-  print_cell(num(42));
+  print_cell(mk(NUM, 42));
   print("\n");
-  print_cell(txt("meow"));
+  print_cell(mk(TXT, (Ref)"meow"));
   print("\n");
-  while (1) {
-    print("> ");
-    readline(&line);
-    print("\n");
-    if (strcmp(line, "exit") == 0) {
-      break;
-    } else {
-      s = line;
-      x = parse(&s);
-      print_cell(x);
-      print("\n");
-    }
-  }
-  print("byeeeee...\n");
-  free(line);
   return 0;
 }
