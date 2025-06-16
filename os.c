@@ -45,7 +45,7 @@ void free(void *ptr) { (void)ptr; /* TODO */ }
 
 void *realloc(void *ptr, size_t n) {
   void *r;
-  size_t i, m;
+  size_t m;
   if (!ptr)
     return malloc(n);
   m = malloc_usable_size(ptr);
@@ -58,9 +58,10 @@ void *realloc(void *ptr, size_t n) {
   return r;
 }
 
-ref get(ref x, int i) { return x ? ((ref *)x)[i] : 0; }
-ref set(ref x, int i, ref y) { return ((ref *)x)[i] = y, x; }
-ref is_pair(ref x) { return !x || (get(x, 0) & 1) == 0; }
+ref head(ref x) { return x ? ((ref *)x)[0] : 0; }
+ref tail(ref x) { return x ? ((ref *)x)[1] : 0; }
+ref set_tail(ref x, ref y) { return ((ref *)x)[1] = y, x; }
+ref is_pair(ref x) { return !x || (head(x) & 1) == 0; }
 
 ref mk(ref a, ref b) {
   ref *x = (ref *)malloc(sizeof(ref) * 2);
@@ -70,11 +71,9 @@ ref mk(ref a, ref b) {
 }
 
 ref push(ref *list, ref x, ref *last) {
-  /*   return *last = get(*list, 0) ? set(*last, 1, mk(x, 0)) : (*list = mk(x,
-   *0)), list; */
-  if (get(*list, 0)) {
-    set(*last, 1, mk(x, 0));
-    *last = get(*last, 1);
+  if (head(*list)) {
+    set_tail(*last, mk(x, 0));
+    *last = tail(*last);
   } else {
     *list = mk(x, 0);
     *last = *list;
@@ -104,27 +103,27 @@ void print_cell(ref x) {
     print("nil");
     return;
   }
-  t = get(x, 0);
+  t = head(x);
   if (is_pair(x)) {
     print("(");
     while (x) {
-      print_cell(get(x, 0));
-      if (get(x, 1)) {
+      print_cell(head(x));
+      if (tail(x)) {
         putchar(' ');
       }
-      x = get(x, 1);
+      x = tail(x);
     }
     print(")");
   } else if (t == TXT) {
     print("\"");
-    for (s = (char *)get(x, 1); *s; s++) {
+    for (s = (char *)tail(x); *s; s++) {
       if (*s == '"' || *s == '\\')
         putchar('\\');
       putchar(*s);
     }
     print("\"");
   } else if (t == NUM) {
-    print_dec(get(x, 1));
+    print_dec(tail(x));
   } else {
     print("#"), print_hex((char *)x, sizeof(ref) * 2);
   }
@@ -224,6 +223,30 @@ ref parse(char **s) {
     return mk(TXT, (ref)memcpy(malloc(*s - start + 1), start, *s - start));
   }
   return 0;
+}
+
+ref eval(ref x, ref env) {
+  ref op, args, last;
+  if (!x) {
+    return 0;
+  }
+  if (is_pair(x)) {
+    if (!head(x)) {
+      return 0;
+    }
+    op = eval(head(x), env);
+    args = 0;
+    while (head(x = tail(x))) {
+      push(&args, eval(head(x), env), &last);
+    }
+    if (head(op) == FN) {
+      return ((ref (*)(ref, ref))op)(args, env);
+    } else {
+      return 0;
+    }
+  }
+  /* TODO */
+  return x;
 }
 
 ref meow(ref args, ref env) {
