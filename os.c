@@ -20,6 +20,13 @@ int same(const char *s1, const char *s2) {
   return *s1 == *s2;
 }
 
+void *memcpy(void *dst, const void *src, size_t n) {
+  size_t i;
+  for (i = 0; i < n; i++)
+    ((char *)dst)[i] = ((char *)src)[i];
+  return dst;
+}
+
 void *malloc(size_t n) {
   void *r;
   n = (n + 3) & ~3;
@@ -46,14 +53,14 @@ void *realloc(void *ptr, size_t n) {
     return ptr;
   n += 1024;
   r = malloc(n);
-  for (i = 0; i < m; i++)
-    ((char *)r)[i] = ((char *)ptr)[i];
+  memcpy(r, ptr, m);
   free(ptr);
   return r;
 }
 
-ref get(ref x, int i) { return ((ref *)x)[i]; }
+ref get(ref x, int i) { return x ? ((ref *)x)[i] : 0; }
 ref set(ref x, int i, ref y) { return ((ref *)x)[i] = y, x; }
+ref is_pair(ref x) { return !x || (get(x, 0) & 1) == 0; }
 
 ref mk(ref a, ref b) {
   ref *x = (ref *)malloc(sizeof(ref) * 2);
@@ -63,7 +70,16 @@ ref mk(ref a, ref b) {
 }
 
 ref push(ref *list, ref x, ref *last) {
-  return *last = get(*list, 0) ? set(*last, 1, mk(x, 0)) : (*list = mk(x, 0)), *list;
+  /*   return *last = get(*list, 0) ? set(*last, 1, mk(x, 0)) : (*list = mk(x,
+   *0)), list; */
+  if (get(*list, 0)) {
+    set(*last, 1, mk(x, 0));
+    *last = get(*last, 1);
+  } else {
+    *list = mk(x, 0);
+    *last = *list;
+  }
+  return *list;
 }
 
 void print_hex(char *x, int n) {
@@ -89,7 +105,17 @@ void print_cell(ref x) {
     return;
   }
   t = get(x, 0);
-  if (t == TXT) {
+  if (is_pair(x)) {
+    print("(");
+    while (x) {
+      print_cell(get(x, 0));
+      if (get(x, 1)) {
+        putchar(' ');
+      }
+      x = get(x, 1);
+    }
+    print(")");
+  } else if (t == TXT) {
     print("\"");
     for (s = (char *)get(x, 1); *s; s++) {
       if (*s == '"' || *s == '\\')
@@ -100,7 +126,7 @@ void print_cell(ref x) {
   } else if (t == NUM) {
     print_dec(get(x, 1));
   } else {
-    print("#"), print_hex((char *)x, sizeof(ref)*2);
+    print("#"), print_hex((char *)x, sizeof(ref) * 2);
   }
 }
 
@@ -132,6 +158,73 @@ char *edit_line(char **line) {
   }
   return *line;
 }
+ref parse(char **s) {
+  char *start, *buffer, *dest;
+  ref x = 0, last, item;
+  int number = 0, sign = 1;
+  while (**s == ' ' || **s == '\t') {
+    (*s)++;
+  }
+  if (**s == '(') {
+    (*s)++;
+    item = parse(s);
+    while (item) {
+      push(&x, item, &last);
+      item = parse(s);
+    }
+    return x;
+  }
+  if (**s == ')') {
+    (*s)++;
+    return 0;
+  }
+  if (**s == '-' || (**s >= '0' && **s <= '9')) {
+    if (**s == '-') {
+      sign = -1;
+      (*s)++;
+    }
+    while (**s >= '0' && **s <= '9') {
+      number = number * 10 + (**s - '0');
+      (*s)++;
+    }
+    return mk(NUM, number * sign);
+  }
+  if (**s == '"') {
+    (*s)++;
+    start = *s;
+    while (**s && **s != '"') {
+      if (**s == '\\') {
+        (*s)++;
+      }
+      if (**s) {
+        (*s)++;
+      }
+    }
+    if (**s == '"') {
+      (*s)++;
+    }
+    buffer = malloc(*s - start + 1);
+    dest = buffer;
+    while (*start && *start != '"') {
+      if (*start == '\\') {
+        start++;
+      }
+      if (*start) {
+        *dest++ = *start++;
+      }
+    }
+    *dest = '\0';
+    return mk(TXT, (ref)buffer);
+  }
+  if (**s > ' ' && **s <= '~' && **s != '(' && **s != ')' && **s != '"') {
+    start = *s;
+    while (**s > ' ' && **s <= '~' && **s != '(' && **s != ')' && **s != '"') {
+      (*s)++;
+    }
+    return mk(TXT, (ref)memcpy(malloc(*s - start + 1), start, *s - start));
+  }
+  return 0;
+}
 
 ref meow(ref args, ref env) {
   print("meow\n");
@@ -139,14 +232,19 @@ ref meow(ref args, ref env) {
 }
 
 int main(void) {
-  char *line = 0;
+  char *line = 0, *cursor;
   ref env = 0, x = 0, last = 0;
-  push(&env, mk(mk(TXT, (ref) "meow"), mk(FN, (ref)meow)), &last);
+  /*   push(&env, mk(mk(TXT, (ref) "meow"), mk(FN, (ref)meow)), &last);*/
+  push(&env, mk(TXT, (ref) "a"), &last);
+  push(&env, mk(TXT, (ref) "b"), &last);
+  push(&env, mk(TXT, (ref) "c"), &last);
   clear();
   print("\n _^..^_ meow!\n\n");
   print_cell(mk(NUM, 42));
   print("\n");
   print_cell(mk(TXT, (ref) "meow"));
+  print("\n");
+  print_cell(env);
   print("\n");
   while (1) {
     print("> ");
@@ -154,8 +252,11 @@ int main(void) {
     print("\n");
     if (same(line, "exit"))
       break;
-    else
-      print_cell(mk(TXT, (ref) line));
+    print_cell(mk(TXT, (ref)line));
+    print("\n");
+    cursor = line;
+    x = parse(&cursor);
+    print_cell(x);
     print("\n");
   }
   print("byeeeee...\n");
