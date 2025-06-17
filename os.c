@@ -178,9 +178,8 @@ Val *eval(Val *e, Val **env) {
 int main(void) {
   char *line, *c;
   Val *x;
+  clear();
   print("\n _^..^_ meow!\n\n");
-  print_val(sym("meow"));
-  print("\n");
   for (;;) {
     putchar('>');
     putchar(' ');
