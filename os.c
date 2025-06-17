@@ -18,8 +18,7 @@ enum { NIL = 0, PAIR = 2, SYM = 1, FN = 3 };
 Val *env = 0, *symbols = 0;
 
 void print(char *s) {
-  while (*s)
-    putchar(*s++);
+  while (*s) putchar(*s++);
 }
 
 void print_hex(char *x, int n) {
@@ -30,10 +29,8 @@ void print_hex(char *x, int n) {
 }
 
 void print_dec(int x) {
-  if (x < 0)
-    putchar('-'), x = -x;
-  if (x >= 10)
-    print_dec(x / 10);
+  if (x < 0) putchar('-'), x = -x;
+  if (x >= 10) print_dec(x / 10);
   putchar(x % 10 + '0');
 }
 
@@ -72,28 +69,33 @@ Val *sym(char *s) {
   p->s = s;
   return (Val *)p;
 }
+
 Val *pair(void *a, void *b) {
   Pair *p = malloc(sizeof(Pair));
   p->a = a;
   p->b = b;
   return (Val *)p;
 }
+
 char type(Val *p) { return p ? (p->t & 1) ? p->t : PAIR : NIL; }
+
 Val *head(Val *p) { return type(p) == PAIR ? ((Pair *)p)->a : 0; }
+
 Val *tail(Val *p) { return type(p) == PAIR ? ((Pair *)p)->b : 0; }
+
 char *value(Val *p) { return type(p) == SYM ? ((Sym *)p)->s : 0; }
+
 Val *lookup(Val *env, Val *key) {
   for (; env; env = tail(env)) {
-    if (head(head(env)) == key)
-      return head(env);
+    if (head(head(env)) == key) return head(env);
   }
   return 0;
 }
+
 Val *intern(Val **ls, char *s, int n) {
   Val *p;
   for (p = *ls; p; p = tail(p)) {
-    if (strncmp(s, value(head(p)), n) == 0)
-      return head(p);
+    if (strncmp(s, value(head(p)), n) == 0) return head(p);
   }
   return head(*ls = pair(sym(strndup(s, n)), *ls));
 }
@@ -112,12 +114,10 @@ Val *push(Val **list, Val *x, Val **last) {
 Val *parse(char **s) {
   Val *x = 0, *last;
   char *t, *u;
-  while (**s && **s <= ' ')
-    (*s)++;
+  while (**s && **s <= ' ') (*s)++;
   if (**s == '(') {
     (*s)++;
-    while (**s && **s != ')')
-      push(&x, parse(s), &last);
+    while (**s && **s != ')') push(&x, parse(s), &last);
     return **s == ')' ? (*s)++, x : x;
   }
   if (**s == '"') {
@@ -125,43 +125,40 @@ Val *parse(char **s) {
       *u++ = **s == '\\' ? (*s)++, *(*s)++ : *(*s)++;
     return **s == '"' ? (*s)++, intern(&symbols, t, u - t) : 0;
   }
-  for (t = *s; **s > ' ' && **s != ')';)
-    (*s)++;
+  for (t = *s; **s > ' ' && **s != ')';) (*s)++;
   return *s > t ? intern(&symbols, t, *s - t) : 0;
 }
 
 void print_val(Val *p) {
   char *s;
   switch (type(p)) {
-  case NIL:
-    putchar('(');
-    putchar(')');
-    break;
-  case PAIR:
-    putchar('(');
-    for (; p; p = tail(p)) {
-      print_val(head(p));
-      if (tail(p))
-        putchar(' ');
-    }
-    putchar(')');
-    break;
-  case SYM:
-    putchar('"');
-    for (s = value(p); *s; s++) {
-      if (*s == '"' || *s == '\\')
-        putchar('\\');
-      putchar(*s);
-    }
-    putchar('"');
-    break;
-  default:
-    putchar('#');
-    print_hex((char *)p, sizeof(void *));
-    putchar(' ');
-    putchar('#');
-    print_hex((char *)p + 4, sizeof(void *));
-    break;
+    case NIL:
+      putchar('(');
+      putchar(')');
+      break;
+    case PAIR:
+      putchar('(');
+      for (; p; p = tail(p)) {
+        print_val(head(p));
+        if (tail(p)) putchar(' ');
+      }
+      putchar(')');
+      break;
+    case SYM:
+      putchar('"');
+      for (s = value(p); *s; s++) {
+        if (*s == '"' || *s == '\\') putchar('\\');
+        putchar(*s);
+      }
+      putchar('"');
+      break;
+    default:
+      putchar('#');
+      print_hex((char *)p, sizeof(void *));
+      putchar(' ');
+      putchar('#');
+      print_hex((char *)p + 4, sizeof(void *));
+      break;
   }
 }
 
