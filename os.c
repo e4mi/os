@@ -162,6 +162,19 @@ void print_val(Val *p) {
   }
 }
 
+Val *eval(Val *e, Val **env) {
+  Val *x;
+  switch (type(e)) {
+    case PAIR:
+      x = eval(head(e), env);
+      return eval(tail(e), env) ? pair(x, eval(tail(e), env)) : 0;
+    case SYM:
+      return lookup(*env, e);
+    default:
+      return e;
+  }
+}
+
 int main(void) {
   char *line, *c;
   Val *x;

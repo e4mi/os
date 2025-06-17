@@ -7,6 +7,7 @@ global putchar
 global exit
 global clear
 global getchar
+global getkey
 global _malloc_here
 global _malloc_max
 
@@ -90,14 +91,24 @@ clear:
 
 getchar:
   push bp
+.get:
   mov ah, 0x00
   int 0x16
+  cmp al, 0
+  je .get
   xor ah, ah
   cmp al, 13
   jne .done
 .nl:
   mov al, 10
 .done:
+  pop bp
+  ret
+
+getkey:
+  push bp
+  mov ah, 0x00
+  int 0x16
   pop bp
   ret
 

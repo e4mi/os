@@ -4,6 +4,7 @@
 /* from libc_i86.asm */
 extern void putchar(char c);
 extern char getchar(void);
+extern unsigned short getkey(void);
 extern void exit(int code);
 extern void clear(void);
 extern void *_malloc_here;
