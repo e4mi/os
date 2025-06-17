@@ -229,12 +229,12 @@ ref lookup(char *x, ref env) {
   char *a, *b;
   while (env) {
     a = x;
-    b = (char*) head(head(env));
+    b = (char *)tail(head(head(env)));
     while (*a && *a == *b) {
       a++, b++;
     }
     if (!*a && !*b) {
-      return head(env);
+      return tail(head(env));
     }
     env = tail(env);
   }
