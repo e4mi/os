@@ -71,8 +71,8 @@ char *edit_line(void) {
 }
 
 char atom(Val *p) { return p->t & 1; }
-
-Val *sym(char *s, int n) {
+#define sym(s) symn(s, sizeof(s) - 1)
+Val *symn(char *s, int n) {
   Sym *p = malloc(sizeof(Sym));
   p->t = 1;
   p->s = strndup(s, n);
@@ -134,18 +134,18 @@ Val *parse(char **s) {
   if (**s == '"') {
     for (t = u = ++(*s); **s && **s != '"';)
       *u++ = **s == '\\' ? (*s)++, *(*s)++ : *(*s)++;
-    return **s == '"' ? (*s)++, sym(t, u - t) : 0;
+    return **s == '"' ? (*s)++, symn(t, u - t) : 0;
   }
   for (t = *s; **s > ' ' && **s != ')';)
     (*s)++;
-  return *s > t ? sym(t, *s - t) : 0;
+  return *s > t ? symn(t, *s - t) : 0;
 }
 
 void print_val(Val *p) {
   char *s;
   switch (type(p)) {
   case NIL:
-    putchar('0');
+    print("()");
     break;
   case PAIR:
     putchar('(');
@@ -197,15 +197,19 @@ Val *eval(Val *e, Val **env) {
 
 Val *ls(Val *args, Val **env) {
   Val *x = 0, *last;
-  push(&x, sym("os.c", 4), &last);
-  push(&x, sym("README.txt", 10), &last);
+  push(&x, sym("os.c"), &last);
+  push(&x, sym("README.txt"), &last);
   return x;
+}
+
+Val *pwd(Val *args, Val **env) {
+  return sym("/");
 }
 
 Val *help(Val *args, Val **env) {
   Val *x = 0, *last;
-  push(&x, sym("ls", 4), &last);
-  push(&x, sym("help", 4), &last);
+  push(&x, sym("ls"), &last);
+  push(&x, sym("help"), &last);
   return x;
 }
 
@@ -213,18 +217,26 @@ int main(void) {
   char *line, *c;
   Val *x, *env = 0, *last;
   clear();
-  push(&env, pair(sym("ls", 4), fn(ls)), &last);
-  push(&env, pair(sym("help", 4), fn(help)), &last);
+  push(&env, pair(sym("ls"), fn(ls)), &last);
+  push(&env, pair(sym("pwd"), fn(pwd)), &last);
+  push(&env, pair(sym("help"), fn(help)), &last);
   print("\n _^..^_ meow!\n\n");
-  eval(pair(sym("meow", 4), 0), &env);
+  eval(pair(sym("meow"), 0), &env);
   for (;;) {
+    x = 0;
     putchar('>');
     putchar(' ');
     line = edit_line();
     putchar('\n');
     c = line;
-    x = parse(&c);
-    x = eval(x, &env);
+    while (*c) {
+      push(&x, parse(&c), &last);
+    }
+    if (type(head(x)) == PAIR) {
+      x = eval(head(x), &env);
+    } else {
+      x = eval(x, &env);
+    }
     print_val(x);
     putchar('\n');
     free(line);
