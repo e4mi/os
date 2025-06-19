@@ -24,7 +24,8 @@ enum { NIL = 0, PAIR = 2, SYM = 1, FN = 3 };
 Val *env = 0, *symbols = 0;
 
 void print(char *s) {
-  while (*s) putchar(*s++);
+  while (*s)
+    putchar(*s++);
 }
 
 void print_hex(char *x, int n) {
@@ -35,8 +36,10 @@ void print_hex(char *x, int n) {
 }
 
 void print_dec(int x) {
-  if (x < 0) putchar('-'), x = -x;
-  if (x >= 10) print_dec(x / 10);
+  if (x < 0)
+    putchar('-'), x = -x;
+  if (x >= 10)
+    print_dec(x / 10);
   putchar(x % 10 + '0');
 }
 
@@ -100,7 +103,8 @@ char *value(Val *p) { return type(p) == SYM ? ((Sym *)p)->s : 0; }
 
 Val *lookup(Val *env, Val *key) {
   for (; env; env = tail(env)) {
-    if (strcmp(value(head(head(env))), value(key)) == 0) return head(env);
+    if (strcmp(value(head(head(env))), value(key)) == 0)
+      return head(env);
   }
   return 0;
 }
@@ -119,10 +123,12 @@ Val *push(Val **list, Val *x, Val **last) {
 Val *parse(char **s) {
   Val *x = 0, *last;
   char *t, *u;
-  while (**s && **s <= ' ') (*s)++;
+  while (**s && **s <= ' ')
+    (*s)++;
   if (**s == '(') {
     (*s)++;
-    while (**s && **s != ')') push(&x, parse(s), &last);
+    while (**s && **s != ')')
+      push(&x, parse(s), &last);
     return **s == ')' ? (*s)++, x : x;
   }
   if (**s == '"') {
@@ -130,71 +136,85 @@ Val *parse(char **s) {
       *u++ = **s == '\\' ? (*s)++, *(*s)++ : *(*s)++;
     return **s == '"' ? (*s)++, sym(t, u - t) : 0;
   }
-  for (t = *s; **s > ' ' && **s != ')';) (*s)++;
+  for (t = *s; **s > ' ' && **s != ')';)
+    (*s)++;
   return *s > t ? sym(t, *s - t) : 0;
 }
 
 void print_val(Val *p) {
   char *s;
   switch (type(p)) {
-    case NIL:
-      putchar('(');
-      putchar(')');
-      break;
-    case PAIR:
-      putchar('(');
-      for (; p; p = tail(p)) {
-        print_val(head(p));
-        if (tail(p)) putchar(' ');
-      }
-      putchar(')');
-      break;
-    case SYM:
-      putchar('"');
-      for (s = value(p); *s; s++) {
-        if (*s == '"' || *s == '\\') putchar('\\');
-        putchar(*s);
-      }
-      putchar('"');
-      break;
-    default:
-      putchar('#');
-      print_hex((char *)p, sizeof(void *));
-      putchar(' ');
-      putchar('#');
-      print_hex((char *)p + 4, sizeof(void *));
-      break;
+  case NIL:
+    putchar('0');
+    break;
+  case PAIR:
+    putchar('(');
+    for (; p; p = tail(p)) {
+      print_val(head(p));
+      if (tail(p))
+        putchar(' ');
+    }
+    putchar(')');
+    break;
+  case SYM:
+    putchar('"');
+    for (s = value(p); *s; s++) {
+      if (*s == '"' || *s == '\\')
+        putchar('\\');
+      putchar(*s);
+    }
+    putchar('"');
+    break;
+  default:
+    putchar('#');
+    print_hex((char *)p, sizeof(void *));
+    putchar(' ');
+    putchar('#');
+    print_hex((char *)p + 4, sizeof(void *));
+    break;
   }
 }
 
 Val *eval(Val *e, Val **env) {
   Val *x, *y = 0, *z, *last;
   switch (type(e)) {
-    case PAIR:
-      x = eval(head(e), env);
-      if (type(x) != FN) {
-        return 0;
-      }
-      for (z = tail(e); z; z = tail(z)) {
-        push(&y, eval(head(z), env), &last);
-      }
-      return ((Fn *)x)->f(y, env);
-    case SYM:
-      x = lookup(*env, e);
-      return tail(x);
-    default:
-      return e;
+  case PAIR:
+    x = eval(head(e), env);
+    if (type(x) != FN) {
+      return 0;
+    }
+    for (z = tail(e); z; z = tail(z)) {
+      push(&y, eval(head(z), env), &last);
+    }
+    return ((Fn *)x)->f(y, env);
+  case SYM:
+    x = lookup(*env, e);
+    return tail(x);
+  default:
+    return e;
   }
 }
 
-Val *meow(Val *args, Val **env) { print("meow!\n"); return 0; }
+Val *ls(Val *args, Val **env) {
+  Val *x = 0, *last;
+  push(&x, sym("os.c", 4), &last);
+  push(&x, sym("README.txt", 10), &last);
+  return x;
+}
+
+Val *help(Val *args, Val **env) {
+  Val *x = 0, *last;
+  push(&x, sym("ls", 4), &last);
+  push(&x, sym("help", 4), &last);
+  return x;
+}
 
 int main(void) {
   char *line, *c;
   Val *x, *env = 0, *last;
   clear();
-  push(&env, pair(sym("meow", 4), fn(meow)), &last);
-  push(&env, pair(sym("hi", 2), sym("kitty", 5)), &last);
+  push(&env, pair(sym("ls", 4), fn(ls)), &last);
+  push(&env, pair(sym("help", 4), fn(help)), &last);
   print("\n _^..^_ meow!\n\n");
   eval(pair(sym("meow", 4), 0), &env);
   for (;;) {
