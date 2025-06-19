@@ -21,7 +21,7 @@ typedef struct Fn {
 
 enum { NIL = 0, PAIR = 2, SYM = 1, FN = 3 };
 
-Val *env = 0, *symbols = 0;
+Val *env = 0;
 
 void print(char *s) {
   while (*s)
@@ -70,13 +70,15 @@ char *edit_line(void) {
   return line;
 }
 
-char atom(Val *p) { return p->t & 1; }
-#define sym(s) symn(s, sizeof(s) - 1)
 Val *symn(char *s, int n) {
   Sym *p = malloc(sizeof(Sym));
   p->t = 1;
   p->s = strndup(s, n);
   return (Val *)p;
+}
+
+Val *sym(char *s) {
+  return symn(s, strlen(s));
 }
 
 Val *pair(void *a, void *b) {

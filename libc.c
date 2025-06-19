@@ -91,6 +91,12 @@ size_t readline(char *buf, size_t size) {
   return i;
 }
 
+size_t strlen(const char *s) {
+  size_t i = 0;
+  while (*s++) i++;
+  return i;
+}
+
 char* strndup(const char *s, size_t n) {
   char *r = malloc(n + 1);
   memcpy(r, s, n);
