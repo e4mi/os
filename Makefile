@@ -1,6 +1,6 @@
 ID := os
 CC := gcc
-CFLAGS = -m16 -ffreestanding -fno-pic -Os -std=c89 -pedantic -Wall
+CFLAGS = -m16 -ffreestanding -fno-pic -Os -std=c99 -pedantic -Wall
 LDFLAGS = -T linker.ld
 SIZE = $(shell expr 8 \* 1024)
 .PHONY: all clean docker run debug
@@ -11,7 +11,7 @@ clean:
 docker:
 	docker build -t $(ID) .
 	docker run -it --rm -v ./:/src -w /src $(ID)
-os.o: os.c libc.c
+os.o: os.c lang.c libc.c
 	$(CC) $(CFLAGS) -c os.c -o os.o
 libc_i86.o: libc_i86.asm
 	nasm -D SIZE=$(SIZE) -f elf32 libc_i86.asm -o libc_i86.o

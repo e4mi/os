@@ -9,7 +9,7 @@
     "nasm.outputFormat": "elf32",
     "nasm.checkOnType": true,
     "clangd.fallbackFlags": [
-      "-std=c89",
+      "-std=c99",
       "-pedantic",
       "-Wall",
       "-Wno-empty-translation-unit"
