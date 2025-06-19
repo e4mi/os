@@ -13,6 +13,12 @@ typedef struct Pair {
   void *a, *b;
 } Pair;
 
+typedef Val *(*FnRef)(Val *, Val **);
+typedef struct Fn {
+  char t;
+  FnRef f;
+} Fn;
+
 enum { NIL = 0, PAIR = 2, SYM = 1, FN = 3 };
 
 Val *env = 0, *symbols = 0;
@@ -63,10 +69,10 @@ char *edit_line(void) {
 
 char atom(Val *p) { return p->t & 1; }
 
-Val *sym(char *s) {
+Val *sym(char *s, int n) {
   Sym *p = malloc(sizeof(Sym));
   p->t = 1;
-  p->s = s;
+  p->s = strndup(s, n);
   return (Val *)p;
 }
 
@@ -74,6 +80,13 @@ Val *pair(void *a, void *b) {
   Pair *p = malloc(sizeof(Pair));
   p->a = a;
   p->b = b;
+  return (Val *)p;
+}
+
+Val *fn(FnRef f) {
+  Fn *p = malloc(sizeof(Fn));
+  p->t = FN;
+  p->f = f;
   return (Val *)p;
 }
 
@@ -87,17 +100,9 @@ char *value(Val *p) { return type(p) == SYM ? ((Sym *)p)->s : 0; }
 
 Val *lookup(Val *env, Val *key) {
   for (; env; env = tail(env)) {
-    if (head(head(env)) == key) return head(env);
+    if (strcmp(value(head(head(env))), value(key)) == 0) return head(env);
   }
   return 0;
-}
-
-Val *intern(Val **ls, char *s, int n) {
-  Val *p;
-  for (p = *ls; p; p = tail(p)) {
-    if (strncmp(s, value(head(p)), n) == 0) return head(p);
-  }
-  return head(*ls = pair(sym(strndup(s, n)), *ls));
 }
 
 Val *push(Val **list, Val *x, Val **last) {
@@ -123,10 +128,10 @@ Val *parse(char **s) {
   if (**s == '"') {
     for (t = u = ++(*s); **s && **s != '"';)
       *u++ = **s == '\\' ? (*s)++, *(*s)++ : *(*s)++;
-    return **s == '"' ? (*s)++, intern(&symbols, t, u - t) : 0;
+    return **s == '"' ? (*s)++, sym(t, u - t) : 0;
   }
   for (t = *s; **s > ' ' && **s != ')';) (*s)++;
-  return *s > t ? intern(&symbols, t, *s - t) : 0;
+  return *s > t ? sym(t, *s - t) : 0;
 }
 
 void print_val(Val *p) {
@@ -163,23 +168,35 @@ void print_val(Val *p) {
 }
 
 Val *eval(Val *e, Val **env) {
-  Val *x;
+  Val *x, *y = 0, *z, *last;
   switch (type(e)) {
     case PAIR:
       x = eval(head(e), env);
-      return eval(tail(e), env) ? pair(x, eval(tail(e), env)) : 0;
+      if (type(x) != FN) {
+        return 0;
+      }
+      for (z = tail(e); z; z = tail(z)) {
+        push(&y, eval(head(z), env), &last);
+      }
+      return ((Fn *)x)->f(y, env);
     case SYM:
-      return lookup(*env, e);
+      x = lookup(*env, e);
+      return tail(x);
     default:
       return e;
   }
 }
 
+Val *meow(Val *args, Val **env) { print("meow!\n"); return 0; }
+
 int main(void) {
   char *line, *c;
-  Val *x;
+  Val *x, *env = 0, *last;
   clear();
+  push(&env, pair(sym("meow", 4), fn(meow)), &last);
+  push(&env, pair(sym("hi", 2), sym("kitty", 5)), &last);
   print("\n _^..^_ meow!\n\n");
+  eval(pair(sym("meow", 4), 0), &env);
   for (;;) {
     putchar('>');
     putchar(' ');
@@ -187,6 +204,7 @@ int main(void) {
     putchar('\n');
     c = line;
     x = parse(&c);
+    x = eval(x, &env);
     print_val(x);
     putchar('\n');
     free(line);
