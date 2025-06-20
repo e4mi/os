@@ -1,10 +1,21 @@
 #include "lang.c"
 
-Val *ls(Val *args, Val **env) {
+Val *fs;
+
+Val *keys(Val *args, Val **env) {
   Val *x = 0, *last;
-  push(&x, sym("os.c"), &last);
-  push(&x, sym("README.txt"), &last);
+  for (Val *y = fs; y; y = tail(y)) {
+    push(&x, head(head(y)), &last);
+  }
   return x;
+}
+
+Val *ls(Val *args, Val **env) {
+  return keys(fs, env);
+}
+
+Val *cat(Val *args, Val **env) {
+  return tail(lookup(fs, head(args)));
 }
 
 Val *pwd(Val *args, Val **env) {
@@ -31,7 +42,11 @@ int main(void) {
   char *line, *c;
   Val *x, *env = 0, *last;
   clear();
+  push(&fs, pair(sym("42.c"), sym("main(){return 42}\n")), &last);
+  push(&fs, pair(sym("README.txt"), sym("meow\n")), &last);
+
   push(&env, pair(sym("ls"), fn(ls)), &last);
+  push(&env, pair(sym("cat"), fn(cat)), &last);
   push(&env, pair(sym("pwd"), fn(pwd)), &last);
   push(&env, pair(sym("lang"), fn(lang)), &last);
   push(&env, pair(sym("exit"), fn(os_exit)), &last);

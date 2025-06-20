@@ -187,7 +187,7 @@ Val *eval(Val *e, Val **env) {
       return 0;
     }
     for (z = tail(e); z; z = tail(z)) {
-      push(&y, eval(head(z), env), &last);
+      push(&y, head(z), &last);
     }
     return ((Fn *)x)->f(y, env);
   case SYM:
