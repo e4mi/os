@@ -38,6 +38,36 @@ Val *os_exit(Val *args, Val **env) {
   return 0;
 }
 
+unsigned char hex_to_byte(char *s) {
+  unsigned char b = 0;
+  for (int i = 0; i < 2; i++) {
+    b <<= 4;
+    if (s[i] >= '0' && s[i] <= '9') {
+      b += s[i] - '0';
+    } else if (s[i] >= 'a' && s[i] <= 'f') {
+      b += s[i] - 'a' + 10;
+    } else if (s[i] >= 'A' && s[i] <= 'F') {
+      b += s[i] - 'A' + 10;
+    }
+  }
+  return b;
+}
+
+/* TODO */
+Val *asm(Val *args, Val **env) {
+  Val *x;
+  char *code;
+  int i = 0, cap = 0;
+  for (x = args; x; x = tail(x)) {
+    if (cap + 1 > cap) {
+      code = realloc(code, (cap += 16));
+    }
+    code[i++] = hex_to_byte(value(head(x)));
+  }
+  ((void(*)(void))code)();
+  return 0;
+}
+
 int main(void) {
   char *line, *c;
   Val *x, *env = 0, *last;
@@ -45,6 +75,7 @@ int main(void) {
   push(&fs, pair(sym("42.c"), sym("main(){return 42}\n")), &last);
   push(&fs, pair(sym("README.txt"), sym("meow\n")), &last);
 
+  push(&env, pair(sym("asm"), fn(asm)), &last);
   push(&env, pair(sym("ls"), fn(ls)), &last);
   push(&env, pair(sym("cat"), fn(cat)), &last);
   push(&env, pair(sym("pwd"), fn(pwd)), &last);
