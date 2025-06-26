@@ -1,23 +1,24 @@
 %include "lib.asm"
 
-cpu 8086
 org 0x7c00
+cpu 8086
 runtime
 
 fn main
-  lit "meow ^.^", 0
-  call prn
-  call exit
+  op prn
+    lit "meow ^.^", 0
+  endop
+  do exit
 endfn
 
 fn emit ; (char -- )
-  pop al
+  pop ax
   mov ah, 0x0e
   int 0x10
   if
-    cmp al, '\n'
+    cmp al, 0x0a
   then
-    mov al, '\r'
+    mov al, 0x0d
     int 0x10
   endif
 endfn
@@ -32,11 +33,12 @@ fn key ; (-- char)
     jmp .read
   endif
   if
-    cmp al, '\r'
+    cmp al, 0x0d
   then
-    mov al, '\n'
+    mov al, 0x0a
   endif
-  push al
+  mov ah, 0
+  push ax
   ret
 endfn
 
@@ -46,9 +48,10 @@ fn prn ; (string -- )
   while
     read_byte al, si
     test al
-  do
-    push al
-    call emit
+  loop
+    op emit
+      push ax
+    endop
   endwhile
 endfn
 
@@ -79,11 +82,11 @@ fn malloc ; (size:u32 -- ptr:u32)
   mov cx, [malloc_here]
   mov dx, [malloc_here + 2]
   push2 cx, dx
-  push2 cx, dx
-  push2 ax, bx
-  call add32
+  do add32, cx, dx, ax, bx
   ; TODO: check for overflow
-  pop2 [malloc_here], [malloc_here + 2]
+  pop2 cx, dx
+  mov [malloc_here], cx
+  mov [malloc_here + 2], dx
   ret
 endfn
 

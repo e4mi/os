@@ -5,7 +5,7 @@
     }
   ],
   "settings": {
-    "nasm.extraFlags": ["-DSIZE=0", "-Inasm", "-b16"],
+    "nasm.extraFlags": ["-DSIZE=0", "-Inasm", "-f bin"],
     "nasm.outputFormat": "elf32",
     "nasm.checkOnType": true,
     "clangd.fallbackFlags": [

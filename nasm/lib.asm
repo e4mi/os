@@ -1,14 +1,54 @@
+%define RSTACK 1
+%define STACK 0
+%xdefine stack_state RSTACK
+%define rpush push
+%define rpop pop
+%define rcall call
+%define rret ret
+%assign _id 0
+
+%macro generate_id 0
+  %assign _id _id + 1
+%endmacro
+
+%macro use_stack 1
+  %ifnidn stack_state, %1
+    xchg sp, bp
+    %define stack_state %1
+  %endif
+%endmacro
+
+%macro push 1
+  use_stack STACK
+  rpush %1
+%endmacro
+
+%macro pop 1
+  use_stack STACK
+  rpop %1
+%endmacro
+
+%macro call 1
+  use_stack RSTACK
+  rcall %1
+%endmacro
+
+%macro ret 0
+  use_stack RSTACK
+  rret
+%endmacro
+
 %macro push2 2
   push %2
   push %1
 %endmacro
 
-%macro pop2 1
-  pop %1
-  pop %2
+%macro pop2 2
+  pop word %1
+  pop word %2
 %endmacro
 
-%macro read_byte 1
+%macro read_byte 2
   %ifnidn %1, al
     %error "read_byte al, si"
   %endif
@@ -18,7 +58,7 @@
   lodsb
 %endmacro
 
-%macro write_byte 1
+%macro write_byte 2
   %ifnidn %1, si
     %error "write_byte si, al"
   %endif
@@ -28,21 +68,12 @@
   stosb
 %endmacro
 
-%define call_raw call
-%macro call 1
-  xchg sp, bp
-  call_raw %1
-  xchg sp, bp
-%endmacro
-
 %macro fn 1
   %1:
-  xchg sp, bp
+  %define stack_state RSTACK
 %endmacro
 
 %macro endfn 0
-  xchg sp, bp
-  ret
 %endmacro
 
 %macro test 1
@@ -50,23 +81,25 @@
 %endmacro
 
 %macro while 0
-  %xdefine _while_id __LINE__
-  .while_ %+ _while_id:
+  generate_id
+  %xdefine _while_id %[_id]
+  .while_%[_id]:
 %endmacro
 
-%macro do 0
-  jz .endwhile_ %+ _while_id
+%macro loop 0
+  jz .endwhile_%[_id]
 %endmacro
 
 %macro endwhile 0
-  jmp .while_ %+ _while_id
-  .endwhile_ %+ _while_id:
+  jmp .while_%[_id]
+  .endwhile_%[_id]:
   %undef _while_id
 %endmacro
 
 %macro if 0
-  %xdefine _if_id __LINE__
-  .if_ %+ _if_id:
+  generate_id
+  %xdefine _if_id %[_id]
+  .if_%[_id]:
 %endmacro
 
 %macro then 0
@@ -90,8 +123,8 @@
   mov ss, ax
   mov sp, 0x7c00
   mov bp, 0x7a00
-  call_raw main
-  call_raw exit
+  call main
+  call exit
 %endmacro
 
 %macro halt 0
@@ -99,4 +132,22 @@
   cli
   hlt
   jmp %%halt
+%endmacro
+
+%macro op 1+
+  %define _op_code %1
+%endmacro
+
+%macro endop 0
+  call _op_code
+  %undef _op_code
+%endmacro
+
+%macro do 1-*
+  %define %%op %1
+  %rep %0 - 1
+    push %2
+    %rotate 1
+  %endrep
+  call %%op
 %endmacro
