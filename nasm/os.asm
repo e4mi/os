@@ -15,9 +15,7 @@ fn emit ; (char -- )
   pop ax
   mov ah, 0x0e
   int 0x10
-  if
-    cmp al, 0x0a
-  then
+  if al, 0x0a
     mov al, 0x0d
     int 0x10
   endif
@@ -27,14 +25,10 @@ fn key ; (-- char)
 .read:
   mov ah, 0x00
   int 0x16
-  if
-    cmp al, 0
-  then
+  if al, 0
     jmp .read
   endif
-  if
-    cmp al, 0x0d
-  then
+  if al, 0x0d
     mov al, 0x0a
   endif
   mov ah, 0

@@ -93,22 +93,18 @@
 %macro endwhile 0
   jmp .while_%[_id]
   .endwhile_%[_id]:
-  %undef _while_id
 %endmacro
 
-%macro if 0
+%macro if 2
   generate_id
   %xdefine _if_id %[_id]
   .if_%[_id]:
-%endmacro
-
-%macro then 0
-  jz .endif_ %+ _if_id
+  cmp %1, %2
+  jz .endif_%[_id]
 %endmacro
 
 %macro endif 0
-  .endif_ %+ _if_id:
-  %undef _if_id
+  .endif_%[_if_id]:
 %endmacro
 
 %macro lit 1+
@@ -140,7 +136,6 @@
 
 %macro endop 0
   call _op_code
-  %undef _op_code
 %endmacro
 
 %macro do 1-*
