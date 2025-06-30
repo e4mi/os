@@ -54,7 +54,7 @@ unsigned char hex_to_byte(char *s) {
 }
 
 /* TODO */
-Val *asm(Val *args, Val **env) {
+Val *raw(Val *args, Val **env) {
   Val *x;
   char *code;
   int i = 0, cap = 0;
@@ -75,7 +75,7 @@ int main(void) {
   push(&fs, pair(sym("42.c"), sym("main(){return 42}\n")), &last);
   push(&fs, pair(sym("README.txt"), sym("meow\n")), &last);
 
-  push(&env, pair(sym("asm"), fn(asm)), &last);
+  push(&env, pair(sym("raw"), fn(raw)), &last);
   push(&env, pair(sym("ls"), fn(ls)), &last);
   push(&env, pair(sym("cat"), fn(cat)), &last);
   push(&env, pair(sym("pwd"), fn(pwd)), &last);
